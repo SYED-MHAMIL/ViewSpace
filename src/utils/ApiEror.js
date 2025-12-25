@@ -1,0 +1,1 @@
+const ApiError extends Error
