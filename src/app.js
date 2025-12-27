@@ -1,8 +1,9 @@
 import  express from "express"
 import cors from "cors"
 import cookieParser from "cookie-parser"
-import { ApiError } from "./utils/ApiEror"
-import { ApiResponse } from "./utils/ApiResponse"
+import { ApiError } from "./utils/ApiEror.js"
+import { ApiResponse } from "./utils/ApiResponse.js"
+import { router } from "./routes/index.route.js"
 
 
 const app = express()
@@ -12,15 +13,24 @@ app.use(express.urlencoded({extended:true,limit: "16kb"}))
 app.use("api/uploads",express.static("uploads"))
 app.use(cookieParser())
 
+
+//    platforfm middel ware
+
+
+app.use("/api",router)
+
+
+
+
 // erro midldwe weware
 
-const  erorrHandler = (err,req,res,next)=>{
+const  erorrHandler =(err, req, res, next)=>{
     if (err instanceof ApiError) {
-        res.status(err.statuscode).json(
+        return res?.status(err.statuscode).json(
             new ApiResponse(err.statuscode,null,err.message)
         )
     } else {
-         res.status(404).json(
+        return  res.status(500).json(
             new ApiResponse(404,null,"Internal Server Issue")
         )
     }
