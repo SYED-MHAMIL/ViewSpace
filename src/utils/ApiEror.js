@@ -1,4 +1,3 @@
-
 class ApiError extends Error {
     stack= ""  
     constructor(
