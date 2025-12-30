@@ -2,7 +2,7 @@ import mongoose, { Schema } from "mongoose";
 import bcrypt from "bcrypt"
 import jwt from "jsonwebtoken"
 
-const UserSchema =new Schema({
+const userSchema =new Schema({
            watchHistory: [{ type: Schema.Types.ObjectId, ref: 'Videos' }] ,
            username :{
                type: String,
@@ -39,38 +39,41 @@ const UserSchema =new Schema({
            refreshToken : {
               type: String,
         //    unique: true,
-              required: true,
+            //   required: true,
            },
            password : {
                 type : String,
-                 required : true
+                 required : [true,'Password is required']
            }
 
 },{timestamps:true})
 
-export  const  User =  mongoose.model("User",UserSchema)
+export  const  User =  mongoose.model("User",userSchema)
 
 
 
 
-UserSchema.pre("save",async () => {
-    const hashPassword =  await  bcrypt.hash(this.password,10)
-    this.password = hashPassword
+userSchema.pre("save", async function (next) {
+    if (!this.isModified("password")) return next();
+
+    this.password = await bcrypt.hash(this.password, 10)
+    next()
 })
 
-UserSchema.methods.isCorrectPassword= async (password) => {
+
+userSchema.methods.isCorrectPassword= async function (password) {
        return  await bcrypt.compare(this.password,password)      
 }
 
 
 
-UserSchema.methods.generateAccessToken = async () => {
+userSchema.methods.generateAccessToken = async function ()  {
     await jwt.sign(this._id,process.env.ACCESS_TOKEN_KEY,ACCESS_TOKEN_EXPIRY)
 }
 
 
 
-UserSchema.methods.generateRefreshToken = async () => {
+userSchema.methods.generateRefreshToken = async function ()  {
     return  await jwt.sign(this._id,process.env.REFRESH_TOKEN_KEY,REFRESH_TOKEN_EXPIRY)
 }
 

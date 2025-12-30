@@ -1,11 +1,10 @@
 import userService from "../services/user.service.js";
 import { AsyncHandler } from "../utils/AsyncHandler.js";
-
+import { ApiResponse } from "../utils/ApiResponse.js";
 
 // regsiter  controller
 
-const registerUser= AsyncHandler(async (req,res)=>{
-     console.log(req.files);
+const registerUser= AsyncHandler(async (req,res)=>{     
      
      const  user  =await userService.registerUser(req,res)
       return  res.status(200).send(
