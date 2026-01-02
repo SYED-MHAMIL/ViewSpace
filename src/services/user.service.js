@@ -1,137 +1,129 @@
 import { User } from "../models/user.model.js";
-import { ApiError } from "../utils/ApiEror.js"
+import { ApiError } from "../utils/ApiEror.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 
-// add
+// function
 
+const generateAccessOrRefreshToken = async (id) => {
+  const user = await User.findById(id);
+  const accessToken = await user.generateAccessToken();
+  const refreshToken = await user.generateRefreshToken();
+  user.refreshToken = refreshToken;
+  await user.save({ validateBeforeSave: false });
 
-// function 
+  return { accessToken, refreshToken };
+};
 
-const generateAccessOrRefreshToken =async (id) => {
-    const user =await User.findById(id)
-    const accessToken = await user.generateAccessToken()
-    const refreshToken= await user.generateAccessToken()
-    user.refreshToken = refreshToken
-    user.save({validateBeforeSave:false})
-    
-    return {accessToken,refreshToken}
+const registerUser = async (req, res) => {
+  const { username, email, fullname, password } = req.body;
 
-}
+  const isAllMissing = [username, email, fullname, password].some(
+    (field) => !field || field.trim() === ""
+  );
 
-const  registerUser =async (req,res)=>{ 
-       
-const { username, email, fullname, password } = req.body;
+  if (isAllMissing) {
+    throw new ApiError(400, "All fields are required");
+  }
 
+  const existedUser = await User.findOne({
+    $or: [{ email }, { username }],
+  });
 
-const isAllMissing = [username, email, fullname, password]
-  .some(field => !field || field.trim() === "");
+  if (existedUser) {
+    throw new ApiError(409, "User email or username already exists");
+  }
 
-if (isAllMissing) {
-  throw new ApiError(400, "All fields are required");
-}
+  const avatarPath = req?.files?.Avatar?.[0]?.path;
+  const coverImagePath = req?.files?.CoverImage?.[0]?.path;
 
-const existedUser = await User.findOne({
-  $or: [{ email },{ username }]
-});
+  if (!avatarPath) {
+    throw new ApiError(400, "Avatar field is required");
+  }
 
-if (existedUser) {
-  throw new ApiError(409, "User email or username already exists");
-}
+  const uploadedAvatar = await uploadOnCloudinary(avatarPath);
+  if (!uploadedAvatar) {
+    throw new ApiError(500, "Avatar upload failed");
+  }
 
-const avatarPath = req?.files?.Avatar?.[0]?.path;
-const  coverImagePath  = req?.files?.CoverImage?.[0]?.path
+  //  cover image
 
-if (!avatarPath) {
-  throw new ApiError(400, "Avatar field is required");
-}
+  if (!coverImagePath) {
+    throw new ApiError(400, "Avatar field is required");
+  }
 
-const uploadedAvatar = await uploadOnCloudinary(avatarPath);
-if (!uploadedAvatar) {
-  throw new ApiError(500, "Avatar upload failed");
-}
+  const uploadedCoverImage = await uploadOnCloudinary(coverImagePath);
+  if (!uploadedCoverImage) {
+    throw new ApiError(500, "Avatar upload failed");
+  }
 
-//  cover image
+  const user = new User({
+    fullname,
+    email,
+    password,
+    username,
+    avatar: uploadedAvatar.url,
+    coverImage: uploadedCoverImage.url,
+  });
 
-if (!coverImagePath) {
-  throw new ApiError(400, "Avatar field is required");
-}
+  if (!user) {
+    throw new ApiError(400, "User is not saved in DB");
+  }
+  console.log(user);
 
-const uploadedCoverImage = await uploadOnCloudinary(coverImagePath);
-if (!uploadedCoverImage) {
-  throw new ApiError(500, "Avatar upload failed");
-}
+  await user.save();
+  const user_plain = user.toObject();
+  delete user_plain.password;
 
- const user= new User({
-   fullname,
-   email,
-   password,
-   username,
-   avatar:  uploadedAvatar.url,
-   coverImage : uploadedCoverImage.url
- })
+  console.log(user_plain);
+  return user_plain;
+};
 
- if (!user) {
-     throw new ApiError(400, "User is not saved in DB");
- }
- console.log(user);
- 
- await user.save()  
- const user_plain =user.toObject()
- delete user_plain.password   
+//  login
 
- console.log(user_plain);
-return user_plain
-    
-}
+const login = async (req, res) => {
+  const { username, email, password } = req?.body;
 
-//  login 
+  if (!(username || email)) {
+    throw new ApiError(400, "Username or Email are required");
+  }
 
-const  login =async (req,res)=>{ 
-       
-const { username, email, password } = req.body;
+  if (!password) {
+    throw new ApiError(409, "Password are required");
+  }
 
+  const existedUser = await User.findOne({
+    $or: [{ email }, { username }],
+  }).select("-refreshToken");
 
-if (!(username || email)) {
-  throw new ApiError(400, "Username or Email are required");
-}
+  if (!existedUser) {
+    throw new ApiError(409, "User does not exists");
+  }
 
-const existedUser = await User.findOne({
-  $or: [{ email },{ username }]
-});
+  if (!(await existedUser?.isCorrectPassword(password))) {
+    throw new ApiError(409, "password does not correct");
+  }
 
-if (!existedUser) {
-  throw new ApiError(409, "User does not exists");
-}
+  const { accessToken, refreshToken } =await generateAccessOrRefreshToken(
+    existedUser._id
+  );
 
-if(!existedUser?.isCorrectPassword(password)) {
-    throw new Error(409,"password is not corrected")
-}
+  return { user: existedUser, accessToken, refreshToken };
+};
 
-const {accessToken,refreshToken} =  generateAccessOrRefreshToken(existedUser._id)
-const options= {
-  maxAge: process.env?.ACCESS_TOKEN_EXPIRY , // Cookie valid for 24 hours (1 day)
-  httpOnly: true,  // Not accessible via JavaScript
-  secure: true,    // Only sent over HTTPS
- 
-}
+const logOut = async (req, res) => {
+  //  remove all tokens
+  //  remove refresh in DB
+  await User.findByIdAndUpdate(
+    req._id,
+    {
+      $set: {
+        refreshToken: undefined,
+      },
+    },
+    { new: true }
+  );
+};
 
-const options2={
-  maxAge: process.env?.REFRESH_TOKEN_EXPIRY , // Cookie valid for 24 hours (1 day)
-  httpOnly: true,  // Not accessible via JavaScript
-  secure: true,    // Only sent over HTTPS
- 
-} 
+// const generateAccessOrRefreshToken =
 
-res.cookie('accessToken', accessToken, options);
-res.cookie('refreshToken', refreshToken, options2);
-const plainUSer = existedUser.select("-refreshToken")
-
-return {plainUSer,refreshToken}
-
-
-}
-
-
-
-
-export  default {registerUser,login}
+export default { registerUser, login, logOut };
