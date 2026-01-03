@@ -113,17 +113,50 @@ const login = async (req, res) => {
 const logOut = async (req, res) => {
   //  remove all tokens
   //  remove refresh in DB
-  await User.findByIdAndUpdate(
-    req._id,
+  
+   const  user=   await User.findByIdAndUpdate(
+    req.user?._id,
     {
       $set: {
-        refreshToken: undefined,
+        refreshToken: null,
       },
     },
     { new: true }
   );
+   console.log("logout RETURN ", user);
+   
+
 };
 
-// const generateAccessOrRefreshToken =
+// 
 
-export default { registerUser, login, logOut };
+
+
+
+const refreshAccessToken = async (req,res) => {
+    const incomingToken  =  req.cookies?.refreshToken  
+    if (!incomingToken) {
+        throw new ApiError(404,"Unauthorized requests")
+    }
+    const decodedUser =  jwt.verify(token,process.env?.REFRESH_TOKEN_KEY)
+    if (!decodedUser) {
+        throw new ApiError(404,"Invalid tokens")
+    }
+
+    const user =await  User.findById(decodedUser._id)
+    if (!user) {
+        throw new ApiError(404,"Invalid user")
+    }
+
+    if (incomingToken !== user?.refreshToken) {
+        throw new ApiError(404,"Reresh token is required OR used")
+    }
+
+    
+    const  { accessToken, refreshToken} = await generateAccessOrRefreshToken(user_id)
+    await User.findOneAndUpdate(user._id,{$set:{"refreshToken" : refreshToken}},{new : True})
+    
+   return  {accessToken, refreshToken}
+}
+
+export default { registerUser, login, logOut ,refreshAccessToken };

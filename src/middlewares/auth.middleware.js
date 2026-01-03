@@ -3,16 +3,16 @@ import { ApiError } from "../utils/ApiEror.js"
 import jwt from "jsonwebtoken"
 const verifyUser = async (req,res,next) => {
     try {
-        const token = req.cookie?.accessToken || req.header("Authorization")?.replace("bearer ","")
-        if (token) {
+        const token = req.cookies?.accessToken || req.header("Authorization")?.replace("bearer ","")
+        if (!token) {
             throw new ApiError(408,"Unauthorized request")
         }
-        const decodedUser =  jwt.verify(token,process.env.JWT_API_SECRET)
+        const decodedUser =  jwt.verify(token,process.env?.ACCESS_TOKEN_KEY)
         if (!decodedUser) {
             throw new ApiError(408,"Unauthorized token")
         }
     
-        const user = User.findById(decodedUser._id)
+        const user =await User.findById(decodedUser._id)
         if (!user) {
             
             throw new ApiError(408,"Invalid Access token")
