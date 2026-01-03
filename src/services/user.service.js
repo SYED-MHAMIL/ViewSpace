@@ -2,7 +2,7 @@ import { User } from "../models/user.model.js";
 import { ApiError } from "../utils/ApiEror.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 
-// function
+// function generateAccessOrRefreshToken handler 
 
 const generateAccessOrRefreshToken = async (id) => {
   const user = await User.findById(id);
