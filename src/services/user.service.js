@@ -215,7 +215,7 @@ const  updateAcountsDetails = async (req,res) => {
   }
 
   // TAKS FOR EMAIL VAIILDAITO tommorow 
-  // 
+
     const User = await User.findByIdAndUpdate(req.user._id,{$set :{fullname :fullname, email : email}}, {new : true})
     if (!User) {
         throw new ApiError(404,"User does not exits")
