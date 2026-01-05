@@ -60,4 +60,42 @@ const logOut  = AsyncHandler(
 
 
 
-export default {registerUser,login,logOut}
+
+const refreshAccessToken  = AsyncHandler(
+     async (req,res) => {
+     const {accessToken, refreshToken} = await  userService.refreshAccessToken(req,res)
+
+       
+     const options= {
+     // Cookie valid for 24 hours (1 day)
+     httpOnly: true,  // Not accessible via JavaScript
+     secure: true,    // Only sent over HTTPS
+     
+     }
+     res.status(403)
+      .cookie('accessToken', accessToken, options)
+      .cookie('refreshToken', refreshToken, options)
+      .json(
+       new ApiResponse(200,null,"Refresh Token successfully")
+     )
+
+  }
+
+  
+
+)
+
+const ChangeCurrentPassword = AsyncHandler(
+     async (req,res) => {
+     await  userService.refreshAccessToken(req,res)
+     res.status(200).json(
+           new ApiResponse(200,null, "Password changed Successfully !")
+     )
+
+     } 
+
+)
+
+
+
+export default {registerUser,login,logOut,refreshAccessToken,ChangeCurrentPassword}

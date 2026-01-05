@@ -1,9 +1,9 @@
-import { User } from "../models/user.model.js";
+import { User, User } from "../models/user.model.js";
 import { ApiError } from "../utils/ApiEror.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 
-// function generateAccessOrRefreshToken handler 
 
+// user Authentication erelated
 const generateAccessOrRefreshToken = async (id) => {
   const user = await User.findById(id);
   const accessToken = await user.generateAccessToken();
@@ -78,8 +78,6 @@ const registerUser = async (req, res) => {
   return user_plain;
 };
 
-//  login
-
 const login = async (req, res) => {
   const { username, email, password } = req?.body;
 
@@ -128,11 +126,6 @@ const logOut = async (req, res) => {
 
 };
 
-// 
-
-
-
-
 const refreshAccessToken = async (req,res) => {
     const incomingToken  =  req.cookies?.refreshToken  
     if (!incomingToken) {
@@ -159,4 +152,81 @@ const refreshAccessToken = async (req,res) => {
    return  {accessToken, refreshToken}
 }
 
-export default { registerUser, login, logOut ,refreshAccessToken };
+
+//  User  related
+
+const ChangeCurrentPassword = async (req,res) => {
+    const {currentPassword ,newPassword,confirmPassword}  = req.body  
+    if (!currentPassword) {
+        throw new ApiError(404,"Current password is required")
+    }
+    const decodedUser = await User.findById(req.user?._id)
+    if (!decodedUser) {
+        throw new ApiError(404,"Unauthorized  user")
+    }
+    
+    const isCorrectPassword = decodedUser?.isCorrectPassword(currentPassword)
+        if (!isCorrectPassword) {
+        throw new ApiError(404,"password is not correct")
+    }
+     
+    if(newPassword !== confirmPassword) {
+        throw new ApiError(404,"Password do not match")
+    }
+   
+    decodedUser.password  = confirmPassword
+    await decodedUser.save({validateBeforeSave:false})
+
+
+}
+
+const getUSer = async (req,res) => {
+  
+    const User = await User.findById(req.params || req.user?._id)
+    if (!User) {
+        throw new ApiError(404,"Unauthorized  user")
+    }
+    
+    return  User
+
+
+}
+
+const deleteUser = async (req,res) => {
+  
+    const User = await User.deleteOne({_id : req.user?._id})
+    if (!User) {
+        throw new ApiError(404,"User does not exits")
+    }
+    
+    return  User
+
+
+}
+
+const  updateAcountsDetails = async (req,res) => {
+  const {fullname,email} = req.body 
+  if(!fullname){
+     throw new  ApiError(406, "Full name is required for update the profiles")
+  }
+
+  if(!email){
+     throw new  ApiError(406, "Email is required for update the profiles")
+  }
+
+  // TAKS FOR EMAIL VAIILDAITO tommorow 
+  // 
+    const User = await User.findByIdAndUpdate(req.user._id,{$set :{fullname :fullname, email : email}}, {new : true})
+    if (!User) {
+        throw new ApiError(404,"User does not exits")
+    }
+    
+    return  User
+
+}
+
+
+
+
+
+export default { registerUser, login, logOut ,refreshAccessToken,ChangeCurrentPassword ,getUSer,deleteUser,updateAcountsDetails};

@@ -9,7 +9,7 @@ userRoute.post("/register",
     userController.registerUser)
 
 userRoute.post("/login",userController.login)
-
 userRoute.post("/logout",verifyUser,userController.logOut)
+userRoute.post("/refreshtoken",userController.refreshAccessToken)
 
-export   {userRoute}
+export   {userRoute}                                                
