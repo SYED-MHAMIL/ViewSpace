@@ -153,7 +153,7 @@ const refreshAccessToken = async (req,res) => {
 }
 
 
-//  User  related
+//  User  related services
 
 const ChangeCurrentPassword = async (req,res) => {
     const {currentPassword ,newPassword,confirmPassword}  = req.body  
