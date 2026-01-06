@@ -180,7 +180,7 @@ const ChangeCurrentPassword = async (req,res) => {
 
 }
 
-const getUSer = async (req,res) => {
+const getUser = async (req,res) => {
   
     const User = await User.findById(req.params || req.user?._id)
     if (!User) {
@@ -214,7 +214,14 @@ const  updateAcountsDetails = async (req,res) => {
      throw new  ApiError(406, "Email is required for update the profiles")
   }
 
-  // TAKS FOR EMAIL VAIILDAITO tommorow 
+  // TAKS FOR EMAIL VAIILDAITO tommorow
+      const  user = await User.findById(req.user._id)
+      const isValidEmail =  user.emailValidation(email)
+      
+      
+  if(!isValidEmail){
+     throw new  ApiError(406, "Email should be like 'example123@gmail.com'")
+  }
 
     const User = await User.findByIdAndUpdate(req.user._id,{$set :{fullname :fullname, email : email}}, {new : true})
     if (!User) {
@@ -229,4 +236,4 @@ const  updateAcountsDetails = async (req,res) => {
 
 
 
-export default { registerUser, login, logOut ,refreshAccessToken,ChangeCurrentPassword ,getUSer,deleteUser,updateAcountsDetails};
+export default { registerUser, login, logOut ,refreshAccessToken,ChangeCurrentPassword ,getUser,deleteUser,updateAcountsDetails};

@@ -87,7 +87,7 @@ const refreshAccessToken  = AsyncHandler(
 
 const ChangeCurrentPassword = AsyncHandler(
      async (req,res) => {
-     await  userService.refreshAccessToken(req,res)
+     await  userService.ChangeCurrentPassword(req,res)
      res.status(200).json(
            new ApiResponse(200,null, "Password changed Successfully !")
      )
@@ -97,5 +97,38 @@ const ChangeCurrentPassword = AsyncHandler(
 )
 
 
+const getUSer = AsyncHandler(
+     async (req,res) => {
+     await  userService.getUser(req,res)
+     res.status(200).json(
+           new ApiResponse(200,null, "User fetched Successfully !")
+     )
 
-export default {registerUser,login,logOut,refreshAccessToken,ChangeCurrentPassword}
+     } 
+
+)
+
+const deleteUser =  AsyncHandler(
+     async (req,res) => {
+     await  userService.deleteUser(req,res)
+     res.status(200).json(
+           new ApiResponse(200,null, "User deleted Successfully !")
+     )
+
+     } 
+)
+
+const updateAcountsDetails =   AsyncHandler(
+     async (req,res) => {
+     await  userService.updateAcountsDetails(req,res)
+     res.status(200).json(
+           new ApiResponse(200,null, "User updated Successfully !")
+     )
+
+     } 
+)
+
+
+
+
+export default {registerUser,login,logOut,refreshAccessToken,ChangeCurrentPassword,getUSer,deleteUser,updateAcountsDetails}

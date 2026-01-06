@@ -64,7 +64,12 @@ userSchema.methods.isCorrectPassword= async function (password) {
        return  await bcrypt.compare(password,this.password)      
 }
 
+userSchema.methods.emailValidation=   async (email) => {
+     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
+  const isValidFormat = emailRegex.test(email)
+  return isValidFormat    
+}
 
 
 userSchema.methods.generateAccessToken = async function ()  {
