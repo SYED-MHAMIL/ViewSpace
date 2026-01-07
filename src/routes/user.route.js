@@ -11,10 +11,10 @@ userRoute.post("/register",
 userRoute.post("/login",userController.login)
 userRoute.post("/logout",verifyUser,userController.logOut)
 userRoute.post("/refreshtoken",userController.refreshAccessToken)
-userRoute.post("/get-user",userController.getUSer)
-userRoute.post("/delete-user",userController.deleteUser)
-userRoute.post("/change-password",userController.ChangeCurrentPassword)
-userRoute.post("/update-account-details",userController.updateAcountsDetails)
+userRoute.get("/get-user/:id",verifyUser,userController.getUSer)
+userRoute.delete("/delete-user",userController.deleteUser)
+userRoute.post("/change-password",verifyUser,userController.ChangeCurrentPassword)
+userRoute.post("/update-account-details",verifyUser,userController.updateAcountsDetails)
 
 
 export   {userRoute}

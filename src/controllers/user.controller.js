@@ -120,9 +120,9 @@ const deleteUser =  AsyncHandler(
 
 const updateAcountsDetails =   AsyncHandler(
      async (req,res) => {
-     await  userService.updateAcountsDetails(req,res)
+     const user  = await  userService.updateAcountsDetails(req,res)
      res.status(200).json(
-           new ApiResponse(200,null, "User updated Successfully !")
+           new ApiResponse(200,user, "User updated Successfully !")
      )
 
      } 

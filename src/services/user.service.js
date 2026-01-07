@@ -1,7 +1,7 @@
-import { User, User } from "../models/user.model.js";
+import { User } from "../models/user.model.js";
 import { ApiError } from "../utils/ApiEror.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
-
+import  jwt  from  "jsonwebtoken"
 
 // user Authentication erelated
 const generateAccessOrRefreshToken = async (id) => {
@@ -160,6 +160,8 @@ const ChangeCurrentPassword = async (req,res) => {
     if (!currentPassword) {
         throw new ApiError(404,"Current password is required")
     }
+    console.log();
+    
     const decodedUser = await User.findById(req.user?._id)
     if (!decodedUser) {
         throw new ApiError(404,"Unauthorized  user")
@@ -181,13 +183,11 @@ const ChangeCurrentPassword = async (req,res) => {
 }
 
 const getUser = async (req,res) => {
-  
-    const User = await User.findById(req.params || req.user?._id)
-    if (!User) {
+    const user = await User.findById( req.user?._id  || req.params?.id )
+    if (!user) {
         throw new ApiError(404,"Unauthorized  user")
-    }
-    
-    return  User
+    }    
+    return  user
 
 
 }
@@ -223,12 +223,12 @@ const  updateAcountsDetails = async (req,res) => {
      throw new  ApiError(406, "Email should be like 'example123@gmail.com'")
   }
 
-    const User = await User.findByIdAndUpdate(req.user._id,{$set :{fullname :fullname, email : email}}, {new : true})
-    if (!User) {
+    const updatedUser = await User.findByIdAndUpdate(req.user._id,{$set :{fullname :fullname, email : email}}, {new : true})
+    if (!updatedUser) {
         throw new ApiError(404,"User does not exits")
     }
     
-    return  User
+    return  updatedUser
 
 }
 
@@ -236,4 +236,4 @@ const  updateAcountsDetails = async (req,res) => {
 
 
 
-export default { registerUser, login, logOut ,refreshAccessToken,ChangeCurrentPassword ,getUser,deleteUser,updateAcountsDetails};
+export default { registerUser,login, logOut ,refreshAccessToken,ChangeCurrentPassword ,getUser,deleteUser,updateAcountsDetails};
