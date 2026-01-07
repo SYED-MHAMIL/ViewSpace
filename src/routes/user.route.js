@@ -12,7 +12,7 @@ userRoute.post("/login",userController.login)
 userRoute.post("/logout",verifyUser,userController.logOut)
 userRoute.post("/refreshtoken",userController.refreshAccessToken)
 userRoute.get("/get-user/:id",verifyUser,userController.getUSer)
-userRoute.delete("/delete-user",userController.deleteUser)
+userRoute.delete("/delete-user",verifyUser,userController.deleteUser)
 userRoute.post("/change-password",verifyUser,userController.ChangeCurrentPassword)
 userRoute.post("/update-account-details",verifyUser,userController.updateAcountsDetails)
 

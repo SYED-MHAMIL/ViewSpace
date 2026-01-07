@@ -194,12 +194,12 @@ const getUser = async (req,res) => {
 
 const deleteUser = async (req,res) => {
   
-    const User = await User.deleteOne({_id : req.user?._id})
-    if (!User) {
+    const user = await User.deleteOne({_id : req.user?._id})
+    if (!user) {
         throw new ApiError(404,"User does not exits")
     }
     
-    return  User
+    return  user
 
 
 }
