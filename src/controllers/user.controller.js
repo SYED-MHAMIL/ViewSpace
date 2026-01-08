@@ -128,7 +128,18 @@ const updateAcountsDetails =   AsyncHandler(
      } 
 )
 
+const  getUserChannelProfile = AsyncHandler(
+     async (req,res) => {
+     const user  = await userService.getUserChannelProfile(req,res)
+     res.status(200).json(
+           new ApiResponse(200,user, "user channel got Successfully!")
+     )
+     } 
+
+    
+
+)
 
 
 
-export default {registerUser,login,logOut,refreshAccessToken,ChangeCurrentPassword,getUSer,deleteUser,updateAcountsDetails}
+export default {registerUser,login,logOut,refreshAccessToken,ChangeCurrentPassword,getUSer,deleteUser,updateAcountsDetails,getUserChannelProfile}

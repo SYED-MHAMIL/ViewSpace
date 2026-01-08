@@ -232,8 +232,73 @@ const  updateAcountsDetails = async (req,res) => {
 
 }
 
+const getUserChannelProfile  =  async (req,res) => {
+       const {username} = req.params
+      //  username means jsmastrry
+       if (!username?.trim()) {
+           throw new ApiError(406 , "User is missing")
+       }
+
+       const channel =  await  User.aggregate([
+        {
+          $match: {username : username?.toLowerCase()}
+        },
+        {
+          $lookup:{
+            from: "subscriptions",
+            localField : "_id" ,
+            foreignField : "channel",
+            as : "subscribers"
+
+          } 
+        },
+        {
+          $lookup:{
+            from: "subscriptions",
+            localField : "_id" ,
+            foreignField : "subscriber",
+            as : "subscribed"
+
+          }
+        },
+        {
+          $addFields:{
+               subscribersCount : {
+                 $size : "$subscribers"
+               },
+               channelSubscribedToCount: {
+                 $size:"$subscribed"
+               },
+               isSubscribed : {
+                $cond : {
+                   if:{$in: [req.user?._id,"$subscribers.subscriber"]},
+                   then: true ,
+                   else: false
+               }
+
+              }
+                
+          }
+        },
+        {
+          $project:{
+            fullname: 1,
+            username :1 ,
+            eamil : 1, 
+            subscribersCount : 1 ,
+          channelSubscribedToCount : 1 ,
+           isSubscribed : 1 ,
+           avatar : 1 ,
+           coverImage :  1 , 
+          }
+        }
+        
+       ])
+         
+       return channel
+
+  
+}
 
 
-
-
-export default { registerUser,login, logOut ,refreshAccessToken,ChangeCurrentPassword ,getUser,deleteUser,updateAcountsDetails};
+export default { registerUser,login, logOut ,refreshAccessToken,ChangeCurrentPassword ,getUser,deleteUser,updateAcountsDetails,getUserChannelProfile};
