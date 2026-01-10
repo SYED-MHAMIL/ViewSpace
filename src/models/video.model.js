@@ -1,7 +1,7 @@
-userRoute.post("/update-account-details",verifyUser,userController.updateAcountsDetails)
+
 import mongoose, { Schema } from "mongoose";
 const VideoSchema =new Schema({
-           owner: [{ type: Schema.Types.ObjectId, ref: 'User' }] ,
+           owner: { type: Schema.Types.ObjectId, ref: 'User' } ,
             videoFile :{
                 type: String,
                 required: true,
@@ -29,10 +29,12 @@ const VideoSchema =new Schema({
             views: {
                 type: Number,
                 required: true,
+                default :0 
             },
             isPublished: {
                 type: String,
                 required: true,  
+                default :true
             }
 
 },{timestamps:true})
