@@ -115,7 +115,7 @@ if (!videoInfoUpdated) {
 
 const deleteVideo =async (req,res) => {
   
-  const  video  = await  Video.deleteOne({_id: req?.params.id })
+  const  video  = await  Video.deleteOne({_id: req?.params.videoId })
   if (!video) {
     throw new ApiError(406, "get all video");
   }
@@ -126,14 +126,17 @@ const deleteVideo =async (req,res) => {
 }
 
 const toggleIsPublishedVideo =async (req,res) => {
-  
-  const  video  = await  Video.findByIdAndUpdate({_id: req?.params.id },{$set : {isPublished: !isPublished}}, {new : true})
-  if (!video) {
-    throw new ApiError(406, "failed video aceess");
-  }
+  const video = await Video.findById(req.params?.videoId);
 
-  
-  return video;
+if (!video) {
+  throw new ApiError(406, "failed video access");
+}
+
+video.isPublished = !video.isPublished;
+await video.save();
+
+return video;
+
   
 }
 
