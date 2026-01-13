@@ -12,11 +12,9 @@ const  addVideo  = AsyncHandler(async (req,res) => {
 const  getAllVideo = AsyncHandler(async (req,res) => {
      const video   = await videoService.getAllVideo(req,res)
    return  res.status(202).json(
-          new ApiResponse(202,video,"Got the all video successfully")
+          new ApiResponse(202,video,"Yoy Got the all video successfully")
      )
 })
-
-
 
 const  getOneVideo = AsyncHandler(async (req,res) => {
      const video   = await videoService.getOneVideo(req,res)
@@ -47,10 +45,6 @@ const  deleteVideo = AsyncHandler(async (req,res) => {
           new ApiResponse(202,video,"video deleted successfully")
      )
 })
-
-
-
-
 
 
 export default  {addVideo,getAllVideo,getOneVideo,updateVideoinfo,toggleIsPublishedVideo,deleteVideo}

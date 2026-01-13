@@ -56,90 +56,117 @@ const addVideo = async (req, res) => {
 
   await video.save();
   return video;
-}
+};
 
-const getAllVideo =async (req,res) => {
-  
-  const  video  = await Video.find({owner: req.user?._id})
-  if (!video) {
-    throw new ApiError(406, "get all video");
+// get all video with pagination
+const getAllVideo = async (req, res) => {
+  const {
+    page = 1,
+    limit = 10,
+    query,
+    sortBy = "createdAt",
+    sortType = "asc",
+    userId,
+  } = req.query;
+  const filter = {
+    isPublished: true,
+  };  
+  if (query) {
+    filter.$or = [
+      { title: { $regex: query, $options: "i" } },
+      { description: { $regex: query, $options: "i" } },
+    ];
+  }
+  filter.owner = userId;
+  const sortOption = {
+    [sortBy]: sortType === "asc" ? 1 : -1,
+  };
+
+  const skip = (Number(page) - 1) *  Number(limit);
+
+  const video = await Video.find({owner: userId})
+    // .sort(sortOption)
+    // .skip(skip)
+    // .limit(Number(limit));
+
+  console.log("get all fetch video", video);
+
+  if (!video || video.length === 0) {
+    throw new ApiError(406, "field to get all video");
   }
 
-  
   return video;
-  
-}
+};
 
-const getOneVideo =async (req,res) => {
-  const {videoId} =  req?.params
-  const  video  = await  Video.findOne({_id: videoId })
+const getOneVideo = async (req, res) => {
+  const { videoId } = req?.params;
+  const video = await Video.findOne({ _id: videoId });
   if (!video) {
-    throw new ApiError(406, "get all video");
+    throw new ApiError(406, "Failed to get video");
   }
 
-  
   return video;
-  
-}
+};
 
-const updateVideoinfo =async (req,res) => {
-  const {title,description} =  req?.body
-  const {videoId} = req.params
-  
-  if ([title,description].some(val=> !val &&  val.trim() == "")) {
+const updateVideoinfo = async (req, res) => {
+  const { title, description } = req?.body;
+  const { videoId } = req.params;
+
+  if ([title, description].some((val) => !val && val.trim() == "")) {
     throw new ApiError(406, "Title and description are both required");
   }
-  
+
   let thumbnailPath = "";
   if (req?.file && req?.file?.path) {
     thumbnailPath = req?.file.path;
   }
- console.log("thumbnailPath",thumbnailPath);
- 
-  
+  console.log("thumbnailPath", thumbnailPath);
+
   const uploadedCloudinary = await uploadOnCloudinary(thumbnailPath);
-if (!uploadedCloudinary) {
+  if (!uploadedCloudinary) {
     throw new ApiError(406, "thumbnai is not saved in cloud");
   }
-  
 
- const videoInfoUpdated =  await  Video.findByIdAndUpdate({_id: videoId}, {$set :{thumbnail:uploadedCloudinary.url,title,description}},{new:true})
+  const videoInfoUpdated = await Video.findByIdAndUpdate(
+    { _id: videoId },
+    { $set: { thumbnail: uploadedCloudinary.url, title, description } },
+    { new: true }
+  );
 
-if (!videoInfoUpdated) {
+  if (!videoInfoUpdated) {
     throw new ApiError(406, "User does not have access");
   }
 
- return  videoInfoUpdated
+  return videoInfoUpdated;
+};
 
-}
-
-const deleteVideo =async (req,res) => {
-  
-  const  video  = await  Video.deleteOne({_id: req?.params.videoId })
+const deleteVideo = async (req, res) => {
+  const video = await Video.deleteOne({ _id: req?.params.videoId });
   if (!video) {
     throw new ApiError(406, "get all video");
   }
 
-  
   return video;
-  
-}
+};
 
-const toggleIsPublishedVideo =async (req,res) => {
+const toggleIsPublishedVideo = async (req, res) => {
   const video = await Video.findById(req.params?.videoId);
 
-if (!video) {
-  throw new ApiError(406, "failed video access");
-}
+  if (!video) {
+    throw new ApiError(406, "failed video access");
+  }
 
-video.isPublished = !video.isPublished;
-await video.save();
+  video.isPublished = !video.isPublished;
+  await video.save();
 
-return video;
+  return video;
+};
 
-  
-}
-
-
-
-export default { addVideo,getAllVideo,getOneVideo,updateVideoinfo,deleteVideo,toggleIsPublishedVideo };
+export default {
+  addVideo,
+  getAllVideo,
+  getOneVideo,
+  updateVideoinfo,
+  deleteVideo,
+  toggleIsPublishedVideo,
+};
