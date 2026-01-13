@@ -71,6 +71,8 @@ const getAllVideo = async (req, res) => {
   const filter = {
     isPublished: true,
   };  
+
+  //  if query exits
   if (query) {
     filter.$or = [
       { title: { $regex: query, $options: "i" } },
@@ -82,6 +84,8 @@ const getAllVideo = async (req, res) => {
     [sortBy]: sortType === "asc" ? 1 : -1,
   };
 
+
+  // skip that we have seen
   const skip = (Number(page) - 1) *  Number(limit);
 
   const video = await Video.find(filter)
