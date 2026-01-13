@@ -84,10 +84,10 @@ const getAllVideo = async (req, res) => {
 
   const skip = (Number(page) - 1) *  Number(limit);
 
-  const video = await Video.find({owner: userId})
-    // .sort(sortOption)
-    // .skip(skip)
-    // .limit(Number(limit));
+  const video = await Video.find(filter)
+    .sort(sortOption)
+    .skip(skip)
+    .limit(Number(limit));
 
   console.log("get all fetch video", video);
 

@@ -12,7 +12,7 @@ const  addVideo  = AsyncHandler(async (req,res) => {
 const  getAllVideo = AsyncHandler(async (req,res) => {
      const video   = await videoService.getAllVideo(req,res)
    return  res.status(202).json(
-          new ApiResponse(202,video,"Yoy Got the all video successfully")
+          new ApiResponse(202,video,"You Got the all video successfully")
      )
 })
 
