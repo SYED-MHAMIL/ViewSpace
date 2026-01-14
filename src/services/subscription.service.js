@@ -1,3 +1,4 @@
+import { isValidObjectId } from "mongoose";
 import { Subscription } from "../models/subscriptions.model.js";
 import { ApiError } from "../utils/ApiEror.js";
 
@@ -33,7 +34,18 @@ const toggleSubscribtion=async (req,res) => {
 }
 
 const  getUserChannelSubscribers  =   async (req,res) => {
-     const {channelId} = req.params
+    const {channelId} = req.params ;
+    if (!isValidObjectId(channelId)) {
+        throw new ApiError(406,"Invalid channel id")
+    }
+
+    const subscriber = await Subscription.find({channel:channelId}).populate({path:"subscriber", select: "-refreshToken -password"})
+    if (!subscriber) {
+        throw new ApiError(406,"subscriber does not  exits")
+    }
+
+    
+     
 }
 
-export default {toggleSubscribtion}
+export default {toggleSubscribtion,getUserChannelSubscribers}
