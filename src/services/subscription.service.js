@@ -48,4 +48,19 @@ const  getUserChannelSubscribers  =   async (req,res) => {
      
 }
 
-export default {toggleSubscribtion,getUserChannelSubscribers}
+
+const  getSubscribedChannels  =   async (req,res) => {
+    const {subscriberId} = req.params ;
+    if (!isValidObjectId(channelId)) {
+        throw new ApiError(406,"Invalid channel id")
+    }
+
+    const subscribedChannels = await Subscription.find({subscriber:subscriberId}).populate({path:"channel", select: "-refreshToken -password"})
+    if (!subscribedChannels) {
+        throw new ApiError(406,"channels does not  exits")
+    }
+
+   return subscribedChannels    
+     
+}
+export default {toggleSubscribtion,getUserChannelSubscribers,getSubscribedChannels}
