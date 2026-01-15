@@ -13,6 +13,10 @@ const toggleSubscribtion=async (req,res) => {
     if (subscriberId) {
             throw new ApiError(406,"Unaughorized request")
     }
+
+    if (subscriberId  === channelId) {
+            throw new ApiError(406,"Unaughorized request: user can not subscribe yourself")
+    }
     
     const  isSubscriber  =await Subscription.findOne({channel:channelId , subscriber: subscriberId})
     if (isSubscriber) {
@@ -55,7 +59,7 @@ const  getSubscribedChannels  =   async (req,res) => {
         throw new ApiError(406,"Invalid channel id")
     }
 
-    const subscribedChannels = await Subscription.find({subscriber:subscriberId}).populate({path:"channel", select: "-refreshToken -password"})
+    const subscribedChannels = await Subscription.find({subscriber:subscriberId}).populate({path:"subscriber", select: "-refreshToken -password"})
     if (!subscribedChannels) {
         throw new ApiError(406,"channels does not  exits")
     }

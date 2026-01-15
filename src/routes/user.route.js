@@ -15,7 +15,7 @@ userRoute.get("/get-user/:id",verifyUser,userController.getUSer)
 userRoute.delete("/delete-user",verifyUser,userController.deleteUser)
 userRoute.post("/change-password",verifyUser,userController.ChangeCurrentPassword)
 userRoute.post("/update-account-details",verifyUser,userController.updateAcountsDetails)
-userRoute.post("/channel:username",verifyUser,userController.getUserChannelProfile)
+userRoute.post("/channel/:username",verifyUser,userController.getUserChannelProfile)
 
 
 export   {userRoute}
