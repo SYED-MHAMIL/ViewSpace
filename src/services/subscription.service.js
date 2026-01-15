@@ -52,9 +52,8 @@ const  getUserChannelSubscribers  =   async (req,res) => {
      
 }
 
-
 const  getSubscribedChannels  =   async (req,res) => {
-    const {subscriberId} = req.params ;
+    const {subscriberId} = req.params;
     if (!isValidObjectId(channelId)) {
         throw new ApiError(406,"Invalid channel id")
     }
