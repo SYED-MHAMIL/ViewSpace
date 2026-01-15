@@ -110,10 +110,17 @@ const getOneVideo = async (req, res) => {
   if (!video) {
     throw new ApiError(406, "Failed to get video");
   }
-   await User.findByIdAndUpdate(req?.user?._id,{
+    console.log("user id",req?.user?._id);
+    
+   const user = await User.findByIdAndUpdate(req?.user?._id,
+    {
     $push:{watchHistory: video._id}
-  })
-
+    }
+    ,
+     {new:true}
+)
+   console.log("get history user" ,user);
+   
   return video;
 };
 
