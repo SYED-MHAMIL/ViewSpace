@@ -6,15 +6,16 @@ const toggleSubscribtion=async (req,res) => {
     const {channelId}  = req.params;
     const  subscriberId =  req?.user._id 
 
-    if (channelId) {
-            throw new ApiError(406,"UnRegisterred channel")
+    if (!channelId) {
+            throw new ApiError(406,"Un registerred channel")
     }
 
-    if (subscriberId) {
+    if (!subscriberId) {
             throw new ApiError(406,"Unaughorized request")
     }
 
-    if (subscriberId  === channelId) {
+    
+    if (subscriberId.equals(channelId)) {
             throw new ApiError(406,"Unaughorized request: user can not subscribe yourself")
     }
     
@@ -29,8 +30,8 @@ const toggleSubscribtion=async (req,res) => {
      
     await Subscription.create({channel:channelId, subscriber : subscriberId})
     return {
-        subscribed: false,
-        message: "Unsubscribed successfully"
+        subscribed: true,
+        message: "Subscribed successfully"
     }
 
     

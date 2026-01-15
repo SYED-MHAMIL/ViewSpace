@@ -3,7 +3,7 @@ import bcrypt from "bcrypt"
 import jwt from "jsonwebtoken"
 
 const userSchema =new Schema({
-           watchHistory: [{ type: Schema.Types.ObjectId, ref: 'Videos' }] ,
+           watchHistory: [{ type: Schema.Types.ObjectId, ref: 'Video' }] ,
            username :{
                type: String,
                unique: true,

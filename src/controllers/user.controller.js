@@ -141,5 +141,17 @@ const  getUserChannelProfile = AsyncHandler(
 )
 
 
+const  getUserWatchHistory = AsyncHandler(
+     async (req,res) => {
+     const user  = await userService.getUserWatchHistory(req,res)
+     res.status(200).json(
+           new ApiResponse(200,user, "User got History Successfully!")
+     )
+     } 
 
-export default {registerUser,login,logOut,refreshAccessToken,ChangeCurrentPassword,getUSer,deleteUser,updateAcountsDetails,getUserChannelProfile}
+    
+
+)
+
+
+export default {registerUser,login,logOut,refreshAccessToken,ChangeCurrentPassword,getUSer,deleteUser,updateAcountsDetails,getUserChannelProfile,getUserWatchHistory}

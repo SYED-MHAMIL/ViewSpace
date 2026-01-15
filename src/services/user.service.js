@@ -1,4 +1,4 @@
-import { User } from "../models/user.model.js";
+  import { User } from "../models/user.model.js";
 import { ApiError } from "../utils/ApiEror.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import  jwt  from  "jsonwebtoken"
@@ -300,5 +300,11 @@ const getUserChannelProfile  =  async (req,res) => {
   
 }
 
+// yourself
+const getUserWatchHistory  =  async (req,res) => {
+    const  userWatchHistory = await User.findById(req?.user?._id).populate("watchHistory")
 
-export default { registerUser,login, logOut ,refreshAccessToken,ChangeCurrentPassword ,getUser,deleteUser,updateAcountsDetails,getUserChannelProfile};
+    return userWatchHistory
+}
+
+export default { registerUser,login, logOut ,refreshAccessToken,ChangeCurrentPassword ,getUser,deleteUser,updateAcountsDetails,getUserChannelProfile,getUserWatchHistory};

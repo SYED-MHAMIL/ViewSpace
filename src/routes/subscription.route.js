@@ -1,10 +1,10 @@
 import { Router } from "express";
-import subscriptipnController from "../controllers/subscriptipn.controller";
-import { verifyUser } from "../middlewares/auth.middleware";
+import subscriptipnController from "../controllers/subscriptipn.controller.js";
+import { verifyUser } from "../middlewares/auth.middleware.js";
 
 const subscriptionRouter = Router()
 
-subscriptionRouter.post("/subscribetoggle/:channelId",verifyUser,asubscriptipnController.toggleSubscribtion)
+subscriptionRouter.post("/subscribertoggle/:channelId",verifyUser,subscriptipnController.toggleSubscribtion)
 
 subscriptionRouter.post("/subscribedchannel/:subscriberId",subscriptipnController.getSubscribedChannels)
 

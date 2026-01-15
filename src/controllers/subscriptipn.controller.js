@@ -1,6 +1,6 @@
-import subscriptionService from "../services/subscription.service";
-import { ApiResponse } from "../utils/ApiResponse";
-import { AsyncHandler } from "../utils/AsyncHandler";
+import subscriptionService from "../services/subscription.service.js";
+import { ApiResponse } from "../utils/ApiResponse.js";
+import { AsyncHandler } from "../utils/AsyncHandler.js";
 
 
 const toggleSubscribtion =AsyncHandler(
