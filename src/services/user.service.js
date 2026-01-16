@@ -301,10 +301,32 @@ const getUserChannelProfile  =  async (req,res) => {
 }
 
 // yourself
-const getUserWatchHistory  =  async (req,res) => {
-    const  userWatchHistory = await User.findById(req?.user?._id).populate("watchHistory")
+// const getUserWatchHistory  =  async (req,res) => {
+//     const  userWatchHistory = await User.findById(req?.user?._id).populate("watchHistory")
 
-    return userWatchHistory
+//     return userWatchHistory
+// }
+
+
+
+const getUserWatchHistory =  async (req,res) => {
+    const  userWatchHistory = await User.aggregate([
+    { $match:{_id: req?.user._id}}
+    ])
+      console.log("get user watch history",userWatchHistory);
+    
+    // return userWatchHistory
 }
+
+
+
+
+
+
+
+
+
+
+
 
 export default { registerUser,login, logOut ,refreshAccessToken,ChangeCurrentPassword ,getUser,deleteUser,updateAcountsDetails,getUserChannelProfile,getUserWatchHistory};
