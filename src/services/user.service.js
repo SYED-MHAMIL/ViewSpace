@@ -310,22 +310,62 @@ const getUserChannelProfile  =  async (req,res) => {
 
 
 const getUserWatchHistory =  async (req,res) => {
-    const  userWatchHistory = await User.aggregate([
-    { $match:{_id: req?.user._id}}
-    ])
-      console.log("get user watch history",userWatchHistory);
+   const userWatchHistory = await User.aggregate([
+  { $match: { _id: req.user._id } },
+
+  // Join watchHistory videos
+  {
+    $lookup: {
+      from: "videos",
+      localField: "watchHistory",
+      foreignField: "_id",
+      as: "watchHistory",
+      pipeline:[
+        {
+          $lookup:{
+            from: "users",
+            localField: "owner",
+            foreignField: "_id",
+            as: "owner",
+            pipeline:[
+              {
+                $project :{
+                  fullname :1,
+                  username : 1 ,
+                  avatar : 1
+                }
+              }
+            ]
+        }}
+      ]
+    }
+  },
+
+
+
+
+
+
+
+  // // Optionally join owners of each video
+  // {
+  //   $lookup: {
+  //     from: "users",              // assuming video.owner is a reference to User
+  //     localField: "watchHistory.owner",
+  //     foreignField: "_id",
+  //     as: "owners"
+  //   }
+  // },
+
+
+ 
+]);
+
+    console.log(userWatchHistory);
     
-    // return userWatchHistory
+   
+    return userWatchHistory
 }
-
-
-
-
-
-
-
-
-
 
 
 
