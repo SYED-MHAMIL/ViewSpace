@@ -1,4 +1,4 @@
-  import { User } from "../models/user.model.js";
+import { User } from "../models/user.model.js";
 import { ApiError } from "../utils/ApiEror.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import  jwt  from  "jsonwebtoken"
@@ -329,17 +329,25 @@ const getUserWatchHistory =  async (req,res) => {
             as: "owner",
             pipeline:[
               {
-                $project :{
-                  fullname :1,
-                  username : 1 ,
-                  avatar : 1
+                $project:{
+                       fullname: 1,
+                       username :1,
+                        avatar : 1
                 }
               }
             ]
-        }}
+        }
+        },
+        {
+          $addFields:{
+            owner :{ $arrayElemAt:["$owner",0]}
+          }
+        },
+
       ]
     }
   },
+ 
 
 
 
@@ -369,4 +377,4 @@ const getUserWatchHistory =  async (req,res) => {
 
 
 
-export default { registerUser,login, logOut ,refreshAccessToken,ChangeCurrentPassword ,getUser,deleteUser,updateAcountsDetails,getUserChannelProfile,getUserWatchHistory};
+export default {registerUser,login, logOut ,refreshAccessToken,ChangeCurrentPassword ,getUser,deleteUser,updateAcountsDetails,getUserChannelProfile,getUserWatchHistory};
