@@ -109,7 +109,7 @@ const getOneVideo = async (req, res) => {
   const video = await Video.findOne({ _id: videoId });
   if (!video) {
     throw new ApiError(406, "Failed to get video");
-  }
+     }
     await User.findByIdAndUpdate(req?.user?._id,
     {
     $push:{watchHistory: video._id}

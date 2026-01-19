@@ -348,24 +348,6 @@ const getUserWatchHistory =  async (req,res) => {
     }
   },
  
-
-
-
-
-
-
-
-  // // Optionally join owners of each video
-  // {
-  //   $lookup: {
-  //     from: "users",              // assuming video.owner is a reference to User
-  //     localField: "watchHistory.owner",
-  //     foreignField: "_id",
-  //     as: "owners"
-  //   }
-  // },
-
-
  
 ]);
 
