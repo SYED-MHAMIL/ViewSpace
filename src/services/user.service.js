@@ -1,7 +1,7 @@
 import { User } from "../models/user.model.js";
 import { ApiError } from "../utils/ApiEror.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
-import  jwt  from  "jsonwebtoken"
+import jwt from "jsonwebtoken";
 
 // user Authentication erelated
 const generateAccessOrRefreshToken = async (id) => {
@@ -9,7 +9,7 @@ const generateAccessOrRefreshToken = async (id) => {
   const accessToken = await user.generateAccessToken();
   const refreshToken = await user.generateRefreshToken();
   user.refreshToken = refreshToken;
-  await user.save({ validateBeforeSave:false });
+  await user.save({ validateBeforeSave: false });
 
   return { accessToken, refreshToken };
 };
@@ -101,7 +101,7 @@ const login = async (req, res) => {
     throw new ApiError(409, "password does not correct");
   }
 
-  const { accessToken, refreshToken } =await generateAccessOrRefreshToken(
+  const { accessToken, refreshToken } = await generateAccessOrRefreshToken(
     existedUser._id
   );
 
@@ -111,8 +111,8 @@ const login = async (req, res) => {
 const logOut = async (req, res) => {
   //  remove all tokens
   //  remove refresh in DB
-  
-   const  user=   await User.findByIdAndUpdate(
+
+  const user = await User.findByIdAndUpdate(
     req.user?._id,
     {
       $set: {
@@ -121,184 +121,173 @@ const logOut = async (req, res) => {
     },
     { new: true }
   );
-   console.log("logout RETURN ", user);
-   
-
+  console.log("logout RETURN ", user);
 };
 
-const refreshAccessToken = async (req,res) => {
-    const incomingToken  =  req.cookies?.refreshToken  
-    if (!incomingToken) {
-        throw new ApiError(404,"Unauthorized requests")
-    }
-    const decodedUser =  jwt.verify(token,process.env?.REFRESH_TOKEN_KEY)
-    if (!decodedUser) {
-        throw new ApiError(404,"Invalid tokens")
-    }
+const refreshAccessToken = async (req, res) => {
+  const incomingToken = req.cookies?.refreshToken;
+  if (!incomingToken) {
+    throw new ApiError(404, "Unauthorized requests");
+  }
+  const decodedUser = jwt.verify(token, process.env?.REFRESH_TOKEN_KEY);
+  if (!decodedUser) {
+    throw new ApiError(404, "Invalid tokens");
+  }
 
-    const user =await  User.findById(decodedUser._id)
-    if (!user) {
-        throw new ApiError(404,"Invalid user")
-    }
+  const user = await User.findById(decodedUser._id);
+  if (!user) {
+    throw new ApiError(404, "Invalid user");
+  }
 
-    if (incomingToken !== user?.refreshToken) {
-        throw new ApiError(404,"Reresh token is required OR used")
-    }
+  if (incomingToken !== user?.refreshToken) {
+    throw new ApiError(404, "Reresh token is required OR used");
+  }
 
-    
-    const  { accessToken, refreshToken} = await generateAccessOrRefreshToken(user_id)
-    await User.findOneAndUpdate(user._id,{$set:{"refreshToken" : refreshToken}},{new : True})
-    
-   return  {accessToken, refreshToken}
-}
+  const { accessToken, refreshToken } =
+    await generateAccessOrRefreshToken(user_id);
+  await User.findOneAndUpdate(
+    user._id,
+    { $set: { refreshToken: refreshToken } },
+    { new: True }
+  );
 
+  return { accessToken, refreshToken };
+};
 
 //  User  related services
 
-const ChangeCurrentPassword = async (req,res) => {
-    const {currentPassword ,newPassword,confirmPassword}  = req.body  
-    if (!currentPassword) {
-        throw new ApiError(404,"Current password is required")
-    }
-    console.log();
-    
-    const decodedUser = await User.findById(req.user?._id)
-    if (!decodedUser) {
-        throw new ApiError(404,"Unauthorized  user")
-    }
-    
-    const isCorrectPassword = decodedUser?.isCorrectPassword(currentPassword)
-        if (!isCorrectPassword) {
-        throw new ApiError(404,"password is not correct")
-    }
-     
-    if(newPassword !== confirmPassword) {
-        throw new ApiError(404,"Password do not match")
-    }
-   
-    decodedUser.password  = confirmPassword
-    await decodedUser.save({validateBeforeSave:false})
+const ChangeCurrentPassword = async (req, res) => {
+  const { currentPassword, newPassword, confirmPassword } = req.body;
+  if (!currentPassword) {
+    throw new ApiError(404, "Current password is required");
+  }
+  console.log();
 
-
-}
-
-const getUser = async (req,res) => {
-    const user = await User.findById( req.user?._id  || req.params?.id )
-    if (!user) {
-        throw new ApiError(404,"Unauthorized  user")
-    }    
-    return  user
-
-
-}
-
-const deleteUser = async (req,res) => {
-  
-    const user = await User.deleteOne({_id : req.user?._id})
-    if (!user) {
-        throw new ApiError(404,"User does not exits")
-    }
-    
-    return  user
-
-
-}
-
-const  updateAcountsDetails = async (req,res) => {
-  const {fullname,email} = req.body 
-  if(!fullname){
-     throw new  ApiError(406, "Full name is required for update the profiles")
+  const decodedUser = await User.findById(req.user?._id);
+  if (!decodedUser) {
+    throw new ApiError(404, "Unauthorized  user");
   }
 
-  if(!email){
-     throw new  ApiError(406, "Email is required for update the profiles")
+  const isCorrectPassword = decodedUser?.isCorrectPassword(currentPassword);
+  if (!isCorrectPassword) {
+    throw new ApiError(404, "password is not correct");
+  }
+
+  if (newPassword !== confirmPassword) {
+    throw new ApiError(404, "Password do not match");
+  }
+
+  decodedUser.password = confirmPassword;
+  await decodedUser.save({ validateBeforeSave: false });
+};
+
+const getUser = async (req, res) => {
+  const user = await User.findById(req.user?._id || req.params?.id);
+  if (!user) {
+    throw new ApiError(404, "Unauthorized  user");
+  }
+  return user;
+};
+
+const deleteUser = async (req, res) => {
+  const user = await User.deleteOne({ _id: req.user?._id });
+  if (!user) {
+    throw new ApiError(404, "User does not exits");
+  }
+
+  return user;
+};
+
+const updateAcountsDetails = async (req, res) => {
+  const { fullname, email } = req.body;
+  if (!fullname) {
+    throw new ApiError(406, "Full name is required for update the profiles");
+  }
+
+  if (!email) {
+    throw new ApiError(406, "Email is required for update the profiles");
   }
 
   // TAKS FOR EMAIL VAIILDAITO tommorow
-      const  user = await User.findById(req.user._id)
-      const isValidEmail =  user.emailValidation(email)
-      
-      
-  if(!isValidEmail){
-     throw new  ApiError(406, "Email should be like 'example123@gmail.com'")
+  const user = await User.findById(req.user._id);
+  const isValidEmail = user.emailValidation(email);
+
+  if (!isValidEmail) {
+    throw new ApiError(406, "Email should be like 'example123@gmail.com'");
   }
 
-    const updatedUser = await User.findByIdAndUpdate(req.user._id,{$set :{fullname :fullname, email : email}}, {new : true})
-    if (!updatedUser) {
-        throw new ApiError(404,"User does not exits")
-    }
-    
-    return  updatedUser
+  const updatedUser = await User.findByIdAndUpdate(
+    req.user._id,
+    { $set: { fullname: fullname, email: email } },
+    { new: true }
+  );
+  if (!updatedUser) {
+    throw new ApiError(404, "User does not exits");
+  }
 
-}
+  return updatedUser;
+};
 
-const getUserChannelProfile  =  async (req,res) => {
-       const {username} = req.params
-      //  username means jsmastrry
-       if (!username?.trim()) {
-           throw new ApiError(406 , "User is missing")
-       }
+const getUserChannelProfile = async (req, res) => {
+  const { username } = req.params;
+  //  username means jsmastrry
+  if (!username?.trim()) {
+    throw new ApiError(406, "User is missing");
+  }
 
-       const channel =  await  User.aggregate([
-        {
-          $match: {username : username?.toLowerCase()}
+  const channel = await User.aggregate([
+    {
+      $match: { username: username?.toLowerCase() },
+    },
+    {
+      $lookup: {
+        from: "subscriptions",
+        localField: "_id",
+        foreignField: "channel",
+        as: "subscribers",
+      },
+    },
+    {
+      $lookup: {
+        from: "subscriptions",
+        localField: "_id",
+        foreignField: "subscriber",
+        as: "subscribed",
+      },
+    },
+    {
+      $addFields: {
+        subscribersCount: {
+          $size: "$subscribers",
         },
-        {
-          $lookup:{
-            from: "subscriptions",
-            localField : "_id" ,
-            foreignField : "channel",
-            as : "subscribers"
-
-          } 
+        channelSubscribedToCount: {
+          $size: "$subscribed",
         },
-        {
-          $lookup:{
-            from: "subscriptions",
-            localField : "_id" ,
-            foreignField : "subscriber",
-            as : "subscribed"
-
-          }
+        isSubscribed: {
+          $cond: {
+            if: { $in: [req.user?._id, "$subscribers.subscriber"] },
+            then: true,
+            else: false,
+          },
         },
-        {
-          $addFields:{
-               subscribersCount : {
-                 $size : "$subscribers"
-               },
-               channelSubscribedToCount: {
-                 $size:"$subscribed"
-               },
-               isSubscribed : {
-                $cond : {
-                   if:{$in: [req.user?._id,"$subscribers.subscriber"]},
-                   then: true ,
-                   else: false
-               }
+      },
+    },
+    {
+      $project: {
+        fullname: 1,
+        username: 1,
+        eamil: 1,
+        subscribersCount: 1,
+        channelSubscribedToCount: 1,
+        isSubscribed: 1,
+        avatar: 1,
+        coverImage: 1,
+      },
+    },
+  ]);
 
-              }
-                
-          }
-        },
-        {
-          $project:{
-            fullname: 1,
-            username :1 ,
-            eamil : 1, 
-            subscribersCount : 1 ,
-          channelSubscribedToCount : 1 ,
-           isSubscribed : 1 ,
-           avatar : 1 ,
-           coverImage :  1 , 
-          }
-        }
-        
-       ])
-         
-       return channel
-
-  
-}
+  return channel;
+};
 
 // yourself
 // const getUserWatchHistory  =  async (req,res) => {
@@ -307,56 +296,59 @@ const getUserChannelProfile  =  async (req,res) => {
 //     return userWatchHistory
 // }
 
+const getUserWatchHistory = async (req, res) => {
+  const userWatchHistory = await User.aggregate([
+    { $match: { _id: req.user._id } },
 
+    // Join watchHistory videos
+    {
+      $lookup: {
+        from: "videos",
+        localField: "watchHistory",
+        foreignField: "_id",
+        as: "watchHistory",
+        pipeline: [
+          {
+            $lookup: {
+              from: "users",
+              localField: "owner",
+              foreignField: "_id",
+              as: "owner",
+              pipeline: [
+                {
+                  $project: {
+                    fullname: 1,
+                    username: 1,
+                    avatar: 1,
+                  },
+                },
+              ],
+            },
+          },
+          {
+            $addFields: {
+              owner: { $arrayElemAt: ["$owner", 0] },
+            },
+          },
+        ],
+      },
+    },
+  ]);
 
-const getUserWatchHistory =  async (req,res) => {
-   const userWatchHistory = await User.aggregate([
-  { $match: { _id: req.user._id } },
+  console.log(userWatchHistory);
 
-  // Join watchHistory videos
-  {
-    $lookup: {
-      from: "videos",
-      localField: "watchHistory",
-      foreignField: "_id",
-      as: "watchHistory",
-      pipeline:[
-        {
-          $lookup:{
-            from: "users",
-            localField: "owner",
-            foreignField: "_id",
-            as: "owner",
-            pipeline:[
-              {
-                $project:{
-                       fullname: 1,
-                       username :1,
-                        avatar : 1
-                }
-              }
-            ]
-        }
-        },
-        {
-          $addFields:{
-            owner :{ $arrayElemAt:["$owner",0]}
-          }
-        },
+  return userWatchHistory;
+};
 
-      ]
-    }
-  },
- 
- 
-]);
-
-    console.log(userWatchHistory);
-    
-   
-    return userWatchHistory
-}
-
-
-
-export default {registerUser,login, logOut ,refreshAccessToken,ChangeCurrentPassword ,getUser,deleteUser,updateAcountsDetails,getUserChannelProfile,getUserWatchHistory};
+export default {
+  registerUser,
+  login,
+  logOut,
+  refreshAccessToken,
+  ChangeCurrentPassword,
+  getUser,
+  deleteUser,
+  updateAcountsDetails,
+  getUserChannelProfile,
+  getUserWatchHistory,
+};

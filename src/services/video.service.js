@@ -1,5 +1,7 @@
 import { User } from "../models/user.model.js";
 import { Video } from "../models/video.model.js";
+import { WatchEvent } from "../models/watchEvent.model.js";
+import { WatchHistory } from "../models/watchHistory.model.js";
 import { ApiError } from "../utils/ApiEror.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 
@@ -110,16 +112,25 @@ const getOneVideo = async (req, res) => {
   if (!video) {
     throw new ApiError(406, "Failed to get video");
      }
-    await User.findByIdAndUpdate(req?.user?._id,
-    {
-    $push:{watchHistory: video._id}
-    }
-    ,
-     {new:true}
-    )
- 
+  
+     const isWatchHistory=await WatchHistory.find({userId:req?.user?._id,videoId})
+    if(!isWatchHistory) {   
+          const history =  await WatchHistory.create({videoId : videoId,userId:req?.user._id,watchCount:watchCount+1})
 
-  return video;
+           await WatchEvent.create({historyId:history._id,videoId})
+
+    }else{
+          const history =  await WatchHistory.findByIdAndUpdate({userId:req?.user._id,videoId},{watchCount:watchCount+1},{new:true})
+          const isDuplicateEvent = await WatchEvent.findOne({historyId:history._id,videoId})
+// if timestamp same we have to update 
+          // history.updatedAt
+          
+// then create
+     await WatchEvent.create({historyId:history._id,videoId})
+    
+    }
+  
+    return video;
 };
 
 const updateVideoinfo = async (req, res) => {
