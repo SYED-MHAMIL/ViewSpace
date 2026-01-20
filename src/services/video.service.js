@@ -1,3 +1,4 @@
+import { DateTime } from "luxon";
 import { User } from "../models/user.model.js";
 import { Video } from "../models/video.model.js";
 import { WatchEvent } from "../models/watchEvent.model.js";
@@ -129,31 +130,42 @@ const getOneVideo = async (req, res) => {
     throw new ApiError(406, "Failed to get video");
      }
      videoId = new mongoose.Types.ObjectId(videoId)
+     const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone
      const isWatchHistory=await WatchHistory.findOne({userId:req?.user?._id,videoId})
      
+     const nowUtc = new Date();
     if(!isWatchHistory) {   
           const history =  await WatchHistory.create({videoId : videoId,userId:req?.user._id,watchCount:1})
 
            await WatchEvent.create({historyId:history._id})
 
     }else{
-           const date =  new Date()
-          const history =  await WatchHistory.findOneAndUpdate({userId:req?.user._id,videoId},{$inc:{watchCount:1},lastWatchedAt: date.toISOString() },{new:true})
+          //  update history 
+          const history =  await WatchHistory.findOneAndUpdate({userId:req?.user._id,videoId},{$inc:{watchCount:1},lastWatchedAt: nowUtc },{new:true})
+         
+           
+            // ---- TIMEZONE SAFE DAY BOUNDARIES ----
 
-          const startOfToday = new Date();
-          startOfToday.setHours(0, 0, 0, 0);
+     const userNow = DateTime.fromJSDate(nowUtc, { zone: "utc" })
+          .setZone(userTimezone);
 
-          const endOfToday = new Date();
-          endOfToday.setHours(23, 59, 59, 999);
-
+          const startOfToday = userNow
+          .startOf("day")
+          .toUTC()
+          .toJSDate() 
+          
+          const endOfToday =userNow 
+          .endOf("day")
+          .toUTC()
+          .toJSDate() 
 
           const isDuplicateEvent = await WatchEvent.findOneAndUpdate(
             { 
               historyId:history?._id,
-              watchedAt: {$gte:startOfToday.toISOString(),$lte:endOfToday.toISOString()}
+              watchedAt: {$gte:startOfToday,$lte:endOfToday}
             },
             {
-              watchedAt: date
+              watchedAt: nowUtc
             },
             {
               new:true
