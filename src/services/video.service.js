@@ -4,6 +4,10 @@ import { WatchEvent } from "../models/watchEvent.model.js";
 import { WatchHistory } from "../models/watchHistory.model.js";
 import { ApiError } from "../utils/ApiEror.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import mongoose from "mongoose";
+
+
+
 
 // add the video
 const addVideo = async (req, res) => {
@@ -106,31 +110,63 @@ const getAllVideo = async (req, res) => {
   return video;
 };
 
+// made history function
+
+
+
+
+
+
+
+
+
+
+
 const getOneVideo = async (req, res) => {
-  const { videoId } = req?.params;
+  let { videoId } = req?.params;
   const video = await Video.findOne({ _id: videoId });
-  if (!video) {
+  if(!video) {
     throw new ApiError(406, "Failed to get video");
      }
-  
-     const isWatchHistory=await WatchHistory.find({userId:req?.user?._id,videoId})
+     videoId = new mongoose.Types.ObjectId(videoId)
+     const isWatchHistory=await WatchHistory.findOne({userId:req?.user?._id,videoId})
+     
     if(!isWatchHistory) {   
-          const history =  await WatchHistory.create({videoId : videoId,userId:req?.user._id,watchCount:watchCount+1})
+          const history =  await WatchHistory.create({videoId : videoId,userId:req?.user._id,watchCount:1})
 
-           await WatchEvent.create({historyId:history._id,videoId})
+           await WatchEvent.create({historyId:history._id})
 
     }else{
-          const history =  await WatchHistory.findByIdAndUpdate({userId:req?.user._id,videoId},{watchCount:watchCount+1},{new:true})
-          const isDuplicateEvent = await WatchEvent.findOne({historyId:history._id,videoId})
-// if timestamp same we have to update 
-          // history.updatedAt
+           const date =  new Date()
+          const history =  await WatchHistory.findOneAndUpdate({userId:req?.user._id,videoId},{$inc:{watchCount:1},lastWatchedAt: date.toISOString() },{new:true})
+
+          const startOfToday = new Date();
+          startOfToday.setHours(0, 0, 0, 0);
+
+          const endOfToday = new Date();
+          endOfToday.setHours(23, 59, 59, 999);
+
+
+          const isDuplicateEvent = await WatchEvent.findOneAndUpdate(
+            { 
+              historyId:history?._id,
+              watchedAt: {$gte:startOfToday.toISOString(),$lte:endOfToday.toISOString()}
+            },
+            {
+              watchedAt: date
+            },
+            {
+              new:true
+            }
+          ) 
           
-// then create
-     await WatchEvent.create({historyId:history._id,videoId})
-    
+          if (!isDuplicateEvent) {
+               await WatchEvent.create({historyId:history?._id,watchedAt:new Date()})       
+          }
+     
     }
   
-    return video;
+    return video; 
 };
 
 const updateVideoinfo = async (req, res) => {

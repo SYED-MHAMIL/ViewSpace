@@ -17,12 +17,12 @@ const watchHistory =  Schema({
    progress : {
      type : Number,
      default : 0 
+   },
+   lastWatchedAt : {
+    type :Date ,
+    default: Date.now
    }
 
-},{
-    timestamps: {
-        uptatedAt: 'lastWatchedAt'
-    }
 }
 )
 
