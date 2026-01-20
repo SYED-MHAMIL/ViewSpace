@@ -179,6 +179,16 @@ const getOneVideo = async (req, res) => {
     }
   
     return video; 
+
+// TODO: will do later on 
+  // enforcing DB-level uniqueness
+  // handling race conditions
+  // splitting this into services
+  // history pagination like YouTube
+
+
+
+
 };
 
 const updateVideoinfo = async (req, res) => {
