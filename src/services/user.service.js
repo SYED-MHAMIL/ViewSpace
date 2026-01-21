@@ -2,6 +2,8 @@ import { User } from "../models/user.model.js";
 import { ApiError } from "../utils/ApiEror.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import jwt from "jsonwebtoken";
+import { WatchEvent } from "../models/watchEvent.model.js";
+import { WatchHistory } from "../models/watchHistory.model.js";
 
 // user Authentication erelated
 const generateAccessOrRefreshToken = async (id) => {
@@ -289,31 +291,26 @@ const getUserChannelProfile = async (req, res) => {
   return channel;
 };
 
-// yourself
-// const getUserWatchHistory  =  async (req,res) => {
-//     const  userWatchHistory = await User.findById(req?.user?._id).populate("watchHistory")
-
-//     return userWatchHistory
-// }
 
 const getUserWatchHistory = async (req, res) => {
-  const userWatchHistory = await User.aggregate([
-    { $match: { _id: req.user._id } },
+  const userWatchHistory = await WatchHistory.aggregate([
+    { $match: { userId: req.user._id } },
 
     // Join watchHistory videos
     {
       $lookup: {
-        from: "videos",
-        localField: "watchHistory",
-        foreignField: "_id",
-        as: "watchHistory",
+        from: "watchevents",
+        localField: "_id",
+        foreignField: "historyId",
+        as: "watchHistoryevent",
+
         pipeline: [
           {
             $lookup: {
-              from: "users",
-              localField: "owner",
+              from: "watchhistories",
+              localField: "historyId",
               foreignField: "_id",
-              as: "owner",
+              as: "video_details",
               pipeline: [
                 {
                   $project: {
@@ -325,11 +322,11 @@ const getUserWatchHistory = async (req, res) => {
               ],
             },
           },
-          {
-            $addFields: {
-              owner: { $arrayElemAt: ["$owner", 0] },
-            },
-          },
+          // {
+          //   $addFields: {
+          //     owner: { $arrayElemAt: ["$owner", 0] },
+          //   },
+          // },
         ],
       },
     },

@@ -117,12 +117,6 @@ const getAllVideo = async (req, res) => {
 
 
 
-
-
-
-
-
-
 const getOneVideo = async (req, res) => {
   let { videoId } = req?.params;
   const video = await Video.findOne({ _id: videoId });
@@ -180,7 +174,7 @@ const getOneVideo = async (req, res) => {
   
     return video; 
 
-// TODO: will do later on 
+  // TODO: will do later on 
   // enforcing DB-level uniqueness
   // handling race conditions
   // splitting this into services
