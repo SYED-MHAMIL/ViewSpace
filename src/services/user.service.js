@@ -295,41 +295,74 @@ const getUserChannelProfile = async (req, res) => {
 const getUserWatchHistory = async (req, res) => {
   const userWatchHistory = await WatchHistory.aggregate([
     { $match: { userId: req.user._id } },
-
-    // Join watchHistory videos
+    // get event
     {
-      $lookup: {
-        from: "watchevents",
-        localField: "_id",
+      $lookup:{
+        from : "watchevents",
+        localField : "_id",
         foreignField: "historyId",
-        as: "watchHistoryevent",
+        as : "event"
+      }
 
-        pipeline: [
-          {
-            $lookup: {
-              from: "watchhistories",
-              localField: "historyId",
-              foreignField: "_id",
-              as: "video_details",
-              pipeline: [
-                {
-                  $project: {
-                    fullname: 1,
-                    username: 1,
-                    avatar: 1,
-                  },
-                },
-              ],
-            },
-          },
-          // {
-          //   $addFields: {
-          //     owner: { $arrayElemAt: ["$owner", 0] },
-          //   },
-          // },
-        ],
-      },
     },
+    {$unwind:"$event"},
+    {
+      $lookup:{
+        from : "videos",
+        localField : "videoId",
+        foreignField: "_id" ,
+        as: "video" ,
+        pipeline : [
+         {
+          $lookup: {
+            from : "users",
+            localField : "owner",
+            foreignField: "_id" ,
+            as: "owner",
+            pipeline :[
+              {
+                $project :{
+                  fullname :1 ,
+                  username :1,
+                  avatar :1
+                }
+              }
+            ]
+          }
+
+         },
+         { $unwind:"$owner"},
+
+        ]   
+        
+      }
+    },
+    {$unwind:"$video"}
+    ,
+    {
+      $project :{
+        watchedAt : "$event.watchedAt",
+
+        video : {
+          owner : "$video.owner",
+          _id: "$owner._id",
+           _id: "$video._id",
+          title: "$video.title",
+          thumbnail: "$video.thumbnail",
+          video: "$video.videoFile",
+          duration: "$video.duration",
+        } 
+ 
+
+
+      }
+    },
+    {
+      $sort :{watchedAt:-1}
+    }
+
+     
+   
   ]);
 
   console.log(userWatchHistory);
