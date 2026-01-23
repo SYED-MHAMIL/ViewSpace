@@ -113,21 +113,38 @@ const getAllVideo = async (req, res) => {
 
 // made history function
 
+// getTodayRange
+function getTodayRange(nowUtc,timeZone) {
+        const userNow = DateTime.fromJSDate(nowUtc, { zone: "utc" })
+          .setZone(timeZone);
+          const startOfToday = userNow
+          .startOf("day")
+          .toUTC()
+          .toJSDate() 
+          
+          const endOfToday =userNow 
+          .endOf("day")
+          .toUTC()
+          .toJSDate() 
 
+    return {start:startOfToday,end:endOfToday}
+}
 
 
 
 const getOneVideo = async (req, res) => {
-  let { videoId } = req?.params;
-  const video = await Video.findOne({ _id: videoId });
+ 
+  let videoId = new mongoose.Types.ObjectId(req?.params?.videoId)
+  const video  = await Video.findByIdAndUpdate(videoId,{$addToSet:{views : req?.user._id}},{new: true})
+
   if(!video) {
-    throw new ApiError(406, "Failed to get video");
+        throw new ApiError(404, "Video not found");
      }
-     videoId = new mongoose.Types.ObjectId(videoId)
      const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone
      const isWatchHistory=await WatchHistory.findOne({userId:req?.user?._id,videoId})
      
-     const nowUtc = new Date();
+       const nowUtc = new Date();
+       
     if(!isWatchHistory) {   
           const history =  await WatchHistory.create({videoId : videoId,userId:req?.user._id,watchCount:1})
 
@@ -140,23 +157,12 @@ const getOneVideo = async (req, res) => {
            
             // ---- TIMEZONE SAFE DAY BOUNDARIES ----
 
-     const userNow = DateTime.fromJSDate(nowUtc, { zone: "utc" })
-          .setZone(userTimezone);
-
-          const startOfToday = userNow
-          .startOf("day")
-          .toUTC()
-          .toJSDate() 
-          
-          const endOfToday =userNow 
-          .endOf("day")
-          .toUTC()
-          .toJSDate() 
-
+ 
+          const {start,end} = getTodayRange(nowUtc,userTimezone)
           const isDuplicateEvent = await WatchEvent.findOneAndUpdate(
             { 
               historyId:history?._id,
-              watchedAt: {$gte:startOfToday,$lte:endOfToday}
+              watchedAt: {$gte:start,$lte:end}
             },
             {
               watchedAt: nowUtc

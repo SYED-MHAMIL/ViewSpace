@@ -365,8 +365,6 @@ const getUserWatchHistory = async (req, res) => {
    
   ]);
 
-  console.log(userWatchHistory);
-
   return userWatchHistory;
 };
 
@@ -382,3 +380,4 @@ export default {
   getUserChannelProfile,
   getUserWatchHistory,
 };
+                    

@@ -26,11 +26,10 @@ const VideoSchema =new Schema({
                 type: Number,
                 required: true,
             },
-            views: {
-                type: Number,
-                required: true,
-                default :0 
-            },
+            views: [{
+                type: Schema.Types.ObjectId,
+                 ref: 'User'            
+            }],
             isPublished: {
                 type: Boolean,
                 required: true,  
@@ -39,4 +38,5 @@ const VideoSchema =new Schema({
 
 },{timestamps:true})
 
-export  const  Video =  mongoose.model("Video",VideoSchema) 
+export  const  Video =  mongoose.model("Video",VideoSchema)
+ 
