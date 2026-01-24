@@ -1,7 +1,6 @@
 import { model, Schema } from "mongoose";
 
-
-const likeVideo  =  Schema({
+const reaction  =  Schema({
      videoId: {
          type  : Schema.Types.ObjectId,
          ref: "Video"
@@ -30,4 +29,4 @@ const likeVideo  =  Schema({
     
 })
 
-export const LikeVideo = model("LikeVideo",likeVideo)
+export const Reaction = model("Reaction",reaction)
