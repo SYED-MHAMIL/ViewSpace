@@ -4,11 +4,23 @@ import { Video } from "../models/video.model.js";
 import { WatchEvent } from "../models/watchEvent.model.js";
 import { WatchHistory } from "../models/watchHistory.model.js";
 import { ApiError } from "../utils/ApiEror.js";
+import { getTodayRange } from "../utils/getTodayRange.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import mongoose from "mongoose";
 
-
-
+// video service handler
+const getAndRegisterView =async (videoId,userId) => {
+  const video = await Video.findByIdAndUpdate(
+    videoId,
+    { $addToSet: { views: userId } },
+    { new: true }
+  );
+  // if vidoeo doenot exits
+  if (!video) {
+    throw new ApiError(404, "Video not found");
+  }
+  return video
+}
 
 // add the video
 const addVideo = async (req, res) => {
@@ -79,7 +91,7 @@ const getAllVideo = async (req, res) => {
 
   const filter = {
     isPublished: true,
-  };  
+  };
 
   //  if query exits
   if (query) {
@@ -93,14 +105,13 @@ const getAllVideo = async (req, res) => {
     [sortBy]: sortType === "asc" ? 1 : -1,
   };
 
-
   // skip that we have seen
-  const skip = (Number(page) - 1) *  Number(limit);
+  const skip = (Number(page) - 1) * Number(limit);
 
-  const video = await Video.find(filter)
-    // .sort(sortOption)
-    // .skip(skip)
-    // .limit(Number(limit));
+  const video = await Video.find(filter);
+  // .sort(sortOption)
+  // .skip(skip)
+  // .limit(Number(limit));
 
   console.log("get all fetch video", video);
 
@@ -111,85 +122,67 @@ const getAllVideo = async (req, res) => {
   return video;
 };
 
-// made history function
 
-// getTodayRange
-function getTodayRange(nowUtc,timeZone) {
-        const userNow = DateTime.fromJSDate(nowUtc, { zone: "utc" })
-          .setZone(timeZone);
-          const startOfToday = userNow
-          .startOf("day")
-          .toUTC()
-          .toJSDate() 
-          
-          const endOfToday =userNow 
-          .endOf("day")
-          .toUTC()
-          .toJSDate() 
+const watchVideo = async (req, res) => {
+// sonvaet to mongoose id 
+  let videoId = new mongoose.Types.ObjectId(req?.params?.videoId);
 
-    return {start:startOfToday,end:endOfToday}
-}
+  const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const isWatchHistory = await WatchHistory.findOne({
+    userId: req?.user?._id,
+    videoId,
+  });
+  const nowUtc = new Date();
+  if (!isWatchHistory) {
+    const history = await WatchHistory.create({
+      videoId: videoId,
+      userId: req?.user._id,
+      watchCount: 1,
+    });
 
+    await WatchEvent.create({ historyId: history._id });
+  } else {
+    //  update history
+    const history = await WatchHistory.findOneAndUpdate(
+      { userId: req?.user._id, videoId },
+      { $inc: { watchCount: 1 }, lastWatchedAt: nowUtc },
+      { new: true }
+    );
 
+    // ---- TIMEZONE SAFE DAY BOUNDARIES ----
 
-const getOneVideo = async (req, res) => {
- 
-  let videoId = new mongoose.Types.ObjectId(req?.params?.videoId)
-  const video  = await Video.findByIdAndUpdate(videoId,{$addToSet:{views : req?.user._id}},{new: true})
+    const { start, end } = getTodayRange(nowUtc, userTimezone);
+    const isDuplicateEvent = await WatchEvent.findOneAndUpdate(
+      {
+        historyId: history?._id,
+        watchedAt: { $gte: start, $lte: end },
+      },
+      {
+        watchedAt: nowUtc,
+      },
+      {
+        new: true,
+      }
+    );
 
-  if(!video) {
-        throw new ApiError(404, "Video not found");
-     }
-     const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone
-     const isWatchHistory=await WatchHistory.findOne({userId:req?.user?._id,videoId})
-     
-       const nowUtc = new Date();
-       
-    if(!isWatchHistory) {   
-          const history =  await WatchHistory.create({videoId : videoId,userId:req?.user._id,watchCount:1})
-
-           await WatchEvent.create({historyId:history._id})
-
-    }else{
-          //  update history 
-          const history =  await WatchHistory.findOneAndUpdate({userId:req?.user._id,videoId},{$inc:{watchCount:1},lastWatchedAt: nowUtc },{new:true})
-         
-           
-            // ---- TIMEZONE SAFE DAY BOUNDARIES ----
-
- 
-          const {start,end} = getTodayRange(nowUtc,userTimezone)
-          const isDuplicateEvent = await WatchEvent.findOneAndUpdate(
-            { 
-              historyId:history?._id,
-              watchedAt: {$gte:start,$lte:end}
-            },
-            {
-              watchedAt: nowUtc
-            },
-            {
-              new:true
-            }
-          ) 
-          
-          if (!isDuplicateEvent) {
-               await WatchEvent.create({historyId:history?._id,watchedAt:new Date()})       
-          }
-     
+    if (!isDuplicateEvent) {
+      await WatchEvent.create({
+        historyId: history?._id,
+        watchedAt: new Date(),
+      });
     }
-  
-    return video; 
+  }
 
-  // TODO: will do later on 
+  return video;
+
+  // TODO: will do later on
   // enforcing DB-level uniqueness
   // handling race conditions
   // splitting this into services
   // history pagination like YouTube
-
-
-
-
 };
+
+
 
 const updateVideoinfo = async (req, res) => {
   const { title, description } = req?.body;

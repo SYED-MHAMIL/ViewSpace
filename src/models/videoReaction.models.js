@@ -20,4 +20,4 @@ const reaction  =  Schema({
 
 })
 
-export const Reaction = model("Reaction",reaction)
+export const Reaction = model("VideoReaction",reaction)

@@ -2,13 +2,15 @@
 import { Reaction } from "../models/videoReaction.models.js";
 import { Video } from "../models/video.model.js";
 import mongoose from "mongoose";
+import { ApiError } from "../utils/ApiEror.js";
 // reaction on video
 const likedVideo = async (req, res) => {
-  const { videoId } = req.params;
+  const session =mongoose.startSession() // start session
+  try {
+    const { videoId } = req.params;
+    const reaction = await Reaction.findOne({ videoId, likedby: _id });
   const { _id } = req.user;
 
-  const reaction = await Reaction.findOne({ videoId, likedby: _id });
-   const session =mongoose.startSession() // start session
    await session.startTransaction()
   
   // if there is no reaction 
@@ -50,13 +52,21 @@ const likedVideo = async (req, res) => {
   return {
     liked: 1,
   };
+  } catch (error) {
+    session.abortTransaction()  
+    throw new ApiError(404,"liked video does not work")
+  }finally{
+    session.abortTransaction()
+  }
+  
 };
 
 const unlikedVideo = async (req, res) => {
-  const { videoId } = req.params;
+   const session =mongoose.startSession() // start session
+   try {
+     const { videoId } = req.params;
   const { _id } = req.user;
   const islikedVideo = await Reaction.findOne({ videoId, likedby: _id });
-  const session =mongoose.startSession() // start session
    await session.startTransaction()
   
   //  no -reaction --->  unlike
@@ -71,7 +81,6 @@ const unlikedVideo = async (req, res) => {
     
     await Video.findByIdAndUpdate(videoId,{$inc:{unliked:1}}).session(session)
     await session.commitTransaction()
-    await session.endSession()
     return {
       videoId: likedvideo.videoId,
       likedby: likedvideo.likedby,
@@ -84,7 +93,6 @@ const unlikedVideo = async (req, res) => {
     await Reaction.deleteOne({ videoId, likedby: _id }).session(session);
     await Video.findByIdAndUpdate(videoId,{$inc:{unliked:-1}}).session(session)
     await session.commitTransaction()
-    await session.endSession()
     return {
       unliked: -1,
     };
@@ -97,11 +105,16 @@ const unlikedVideo = async (req, res) => {
   await Video.findByIdAndUpdate(videoId,{$inc:{unliked:1,liked:-1}}).session(session)
 
   await session.commitTransaction()
-    await session.endSession()
-
+  
   return {
     unliked: 1,
   };
+   } catch (error) {
+       throw new ApiError(404,"unliked video does not work")    
+   }
+   finally{
+       session.abortTransaction()
+   }
 };
 
 
@@ -109,5 +122,4 @@ const unlikedVideo = async (req, res) => {
 export default {
   likedVideo,
   unlikedVideo,
-
 };
