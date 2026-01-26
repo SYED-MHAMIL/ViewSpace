@@ -13,7 +13,7 @@ const reaction  =  Schema({
     },
      reaction:{
         type: Number,
-        enum: [1,-1],
+        enum: [1,-1], // 1 means like and -1 means unlike 
         default: true
     }
 

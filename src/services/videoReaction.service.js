@@ -29,7 +29,7 @@ const likedVideo = async (req, res) => {
   }
 
   // toggleOff
-  if (reaction?.liked == 1) {
+  if (reaction?.reaction == 1) {
     await session.startTransaction()
      await Reaction.deleteOne({ videoId, likedby: _id }).session(session),
      await  Video.findByIdAndDelete({_id:videoId},{$inc:{liked:-1}}).session(session)
@@ -43,9 +43,7 @@ const likedVideo = async (req, res) => {
   }
 
   // switch unlike to  liked
-  reaction.liked = 1;
-  reaction.unliked = 0;
-  
+  reaction.reaction = 1;
   await Video.findByIdAndDelete({_id:videoId},{$inc:{liked:1,unliked:-1}},{session}),
   await reaction.save({session})  
   session.endSession()
@@ -57,16 +55,23 @@ const likedVideo = async (req, res) => {
 const unlikedVideo = async (req, res) => {
   const { videoId } = req.params;
   const { _id } = req.user;
-
   const islikedVideo = await Reaction.findOne({ videoId, likedby: _id });
+  const session =mongoose.startSession() // start session
+   await session.startTransaction()
+  
+  //  no -reaction --->  unlike
   if (!islikedVideo) {
+     await session.startTransaction()
     const likedvideo = await Reaction.create({
       videoId,
       likedby: _id,
-      unliked: 1,
+      reaction: 1,
       liked: 0,
-    });
-
+    },{session});
+    
+    await Video.findByIdAndUpdate(videoId,{$inc:{unliked:1}}).session(session)
+    await session.commitTransaction()
+    await session.endSession()
     return {
       videoId: likedvideo.videoId,
       likedby: likedvideo.likedby,
@@ -74,17 +79,25 @@ const unlikedVideo = async (req, res) => {
     };
   }
   //  toggleoff
-  if (likedVideo.unliked == 1) {
-    await Reaction.deleteOne({ videoId, likedby: _id });
+  if (likedVideo.reaction == -1) {
+    await session.startTransaction()
+    await Reaction.deleteOne({ videoId, likedby: _id }).session(session);
+    await Video.findByIdAndUpdate(videoId,{$inc:{unliked:-1}}).session(session)
+    await session.commitTransaction()
+    await session.endSession()
     return {
       unliked: -1,
     };
   }
 
   //  switch from liked to unlike
-  likedVideo.liked = 0;
-  likedVideo.unliked = 1;
-  await likedVideo.save();
+  likedVideo.reaction = -1 
+
+  await likedVideo.save({session});
+  await Video.findByIdAndUpdate(videoId,{$inc:{unliked:1,liked:-1}}).session(session)
+
+  await session.commitTransaction()
+    await session.endSession()
 
   return {
     unliked: 1,
