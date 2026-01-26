@@ -1,6 +1,6 @@
 import { WatchHistory } from "../models/watchHistory.model.js"
 
-const getHistory = async (videoId,userId) => {
+const getHistory = async (videoId,userId,session) => {
     // TODO 
     // check alreawdy hisdoy
     // no so ceratee hsitory 
@@ -10,11 +10,16 @@ const getHistory = async (videoId,userId) => {
       { userId,videoId },
       { $inc: { watchCount: 1 }, lastWatchedAt: nowUtc },
       { new: true }
-    );
+    ).session(session);
    
     if(!history){
-        await WatchHistory.create({ userId,videoId,watchCount:1,lastWatchedAt: nowUtc })
-         
+        const history = await WatchHistory.create({ userId,videoId,watchCount:1,lastWatchedAt: nowUtc},{session})         
+        return  history
     }
 
+    return history
+
 }
+
+
+export {getHistory}

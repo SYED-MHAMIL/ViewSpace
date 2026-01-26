@@ -24,7 +24,6 @@ const likedVideo = async (req, res) => {
     },{session})
     await Video.findByIdAndDelete({_id:videoId},{$inc:{liked:1}},{session} );
     await session.commitTransaction();
-    await session.endSession()
     return {
       liked: 1,
     };
@@ -36,7 +35,7 @@ const likedVideo = async (req, res) => {
      await Reaction.deleteOne({ videoId, likedby: _id }).session(session),
      await  Video.findByIdAndDelete({_id:videoId},{$inc:{liked:-1}}).session(session)
      await session.commitTransaction();
-     session.endSession()
+   
 
 
      return {
@@ -48,15 +47,15 @@ const likedVideo = async (req, res) => {
   reaction.reaction = 1;
   await Video.findByIdAndDelete({_id:videoId},{$inc:{liked:1,unliked:-1}},{session}),
   await reaction.save({session})  
-  session.endSession()
+  
   return {
     liked: 1,
   };
   } catch (error) {
-    session.abortTransaction()  
+    await session.abortTransaction()  
     throw new ApiError(404,"liked video does not work")
   }finally{
-    session.abortTransaction()
+    await session.endSession()
   }
   
 };
@@ -110,10 +109,11 @@ const unlikedVideo = async (req, res) => {
     unliked: 1,
   };
    } catch (error) {
+       await session.abortTransaction()
        throw new ApiError(404,"unliked video does not work")    
    }
    finally{
-       session.abortTransaction()
+       await session.endSession()
    }
 };
 

@@ -1,20 +1,21 @@
 import { DateTime } from "luxon";
-import { User } from "../models/user.model.js";
+// import { User } from "../models/user.model.js";
+import { getHistory } from "./watchHistory.service.js"
+import { watchEvent } from "./watchEvent.service.js"
 import { Video } from "../models/video.model.js";
-import { WatchEvent } from "../models/watchEvent.model.js";
-import { WatchHistory } from "../models/watchHistory.model.js";
 import { ApiError } from "../utils/ApiEror.js";
-import { getTodayRange } from "../utils/getTodayRange.js";
+
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import mongoose from "mongoose";
 
+
 // video service handler
-const getAndRegisterView =async (videoId,userId) => {
+const getAndRegisterView =async (videoId,userId,session) => {
   const video = await Video.findByIdAndUpdate(
     videoId,
     { $addToSet: { views: userId } },
     { new: true }
-  );
+  ).session(session);
   // if vidoeo doenot exits
   if (!video) {
     throw new ApiError(404, "Video not found");
@@ -124,56 +125,27 @@ const getAllVideo = async (req, res) => {
 
 
 const watchVideo = async (req, res) => {
-// sonvaet to mongoose id 
-  let videoId = new mongoose.Types.ObjectId(req?.params?.videoId);
+  const session  =await mongoose.startSession()
+ 
+  try {
+     await session.startTransaction()
+     const {videoId} =req.params
+     const {userId} =req.user
+  
+      const video = await getAndRegisterView(videoId,userId,session)
+      const history = await getHistory(videoId,userId,session)
+      await watchEvent(history._id,session)
+      await session.commitTransaction()  
+      return video
+    } catch (error) {
+    await session.abortTransaction()
+    throw new ApiError(404," you can't watch the video ")
 
-  const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  const isWatchHistory = await WatchHistory.findOne({
-    userId: req?.user?._id,
-    videoId,
-  });
-  const nowUtc = new Date();
-  if (!isWatchHistory) {
-    const history = await WatchHistory.create({
-      videoId: videoId,
-      userId: req?.user._id,
-      watchCount: 1,
-    });
-
-    await WatchEvent.create({ historyId: history._id });
-  } else {
-    //  update history
-    const history = await WatchHistory.findOneAndUpdate(
-      { userId: req?.user._id, videoId },
-      { $inc: { watchCount: 1 }, lastWatchedAt: nowUtc },
-      { new: true }
-    );
-
-    // ---- TIMEZONE SAFE DAY BOUNDARIES ----
-
-    const { start, end } = getTodayRange(nowUtc, userTimezone);
-    const isDuplicateEvent = await WatchEvent.findOneAndUpdate(
-      {
-        historyId: history?._id,
-        watchedAt: { $gte: start, $lte: end },
-      },
-      {
-        watchedAt: nowUtc,
-      },
-      {
-        new: true,
-      }
-    );
-
-    if (!isDuplicateEvent) {
-      await WatchEvent.create({
-        historyId: history?._id,
-        watchedAt: new Date(),
-      });
-    }
+  }finally{
+            await session.endSession()
   }
+  
 
-  return video;
 
   // TODO: will do later on
   // enforcing DB-level uniqueness
@@ -181,8 +153,6 @@ const watchVideo = async (req, res) => {
   // splitting this into services
   // history pagination like YouTube
 };
-
-
 
 const updateVideoinfo = async (req, res) => {
   const { title, description } = req?.body;
@@ -241,7 +211,7 @@ const toggleIsPublishedVideo = async (req, res) => {
 export default {
   addVideo,
   getAllVideo,
-  getOneVideo,
+  watchVideo,
   updateVideoinfo,
   deleteVideo,
   toggleIsPublishedVideo,

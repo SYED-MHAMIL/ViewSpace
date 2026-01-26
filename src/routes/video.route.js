@@ -9,7 +9,7 @@ videoRouter.post('/addvideo',verifyUser,upload.fields([
     {name : "thumbnail", maxCount: 1}
 ]) ,videoControllers.addVideo)
 videoRouter.get('/getAllVideo',verifyUser, videoControllers.getAllVideo)
-videoRouter.get('/getOneVideo/:videoId',verifyUser, videoControllers.getOneVideo)
+videoRouter.get('/watchvideo/:videoId',verifyUser, videoControllers.watchVideo)
 videoRouter.post('/updateVideoinfo/:videoId',verifyUser, upload.single("thumbnail"),videoControllers.updateVideoinfo)
 videoRouter.post('/toggleIsPublishedVideo/:videoId',verifyUser, videoControllers.toggleIsPublishedVideo)
 videoRouter.delete('/deleteVideo/:videoId',verifyUser,videoControllers.deleteVideo)
