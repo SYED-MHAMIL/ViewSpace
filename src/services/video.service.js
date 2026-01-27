@@ -7,6 +7,7 @@ import { ApiError } from "../utils/ApiEror.js";
 
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import mongoose from "mongoose";
+import { User } from "../models/user.model.js";
 
 
 // video service handler
@@ -14,7 +15,8 @@ const getAndRegisterView =async (videoId,userId,session) => {
   const video = await Video.findByIdAndUpdate(
     videoId,
     { $addToSet: { views: userId } },
-    { new: true }
+    { new: true },
+    { upsert: true }
   ).session(session);
   // if vidoeo doenot exits
   if (!video) {
@@ -124,21 +126,59 @@ const getAllVideo = async (req, res) => {
 };
 
 
+// get user reaction oon video
+const getAllUserReaction =async (videoId) => {
+   await Video.aggregate([
+     {
+       $match :{
+          _id : videoId,
+       }
+     },
+    //  TODO
+    //  {
+      //  $lookup :{
+    //       from : "videoreactions",
+    //       localField: "_id",
+    //       foreignField: "videoId",
+    //       as: "likeReact",
+    //       pipeline :[
+    //         {
+    //           $exp : {$eq : ["reaction",1]}
+    //         }
+    //       ]  
+    //    }
+    //  },
+    //  {
+    //   $addFields :{
+    //      liked : {$cond : {if:'$likeReact.reaction' == 1,then:{$size: "$likeReact.reaction"}}}
+    //   }
+    //  }      
+   ])
+   
+
+
+} 
+
+
+
 const watchVideo = async (req, res) => {
   const session  =await mongoose.startSession()
  
   try {
-     await session.startTransaction()
-     const {videoId} =req.params
-     const {userId} =req.user
+     session.startTransaction()
+     let {videoId} =req.params
+     videoId =  new mongoose.Types.ObjectId(videoId)
+     const {_id} =req.user
   
-      const video = await getAndRegisterView(videoId,userId,session)
-      const history = await getHistory(videoId,userId,session)
+      const video = await getAndRegisterView(videoId,_id,session)
+      const history = await getHistory(videoId,_id,session)
       await watchEvent(history._id,session)
+      
       await session.commitTransaction()  
       return video
     } catch (error) {
     await session.abortTransaction()
+      console.error("watchVideo error:", error);  // <-- log full error
     throw new ApiError(404," you can't watch the video ")
 
   }finally{

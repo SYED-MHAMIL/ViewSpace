@@ -5,8 +5,7 @@ import {getTodayRange} from "../utils/getTodayRange.js"
 const watchEvent = async (historyId,session) => {
      try {
          const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-         console.log("history", historyId);
-   
+         
       const nowUtc = new Date()
        const { start, end } = getTodayRange(nowUtc, userTimezone);
        const isDuplicateEvent = await WatchEvent.findOneAndUpdate(
@@ -19,23 +18,16 @@ const watchEvent = async (historyId,session) => {
          },
          {
            new: true,
-         }
-       ).session(session);
-
-
-        console.log("dupleecate envet ", isDuplicateEvent);
-        
+         },
+         { upsert: true }
+       ).session(session);        
    
        if (!isDuplicateEvent) {
-         await WatchEvent.create({
+         await WatchEvent.create([{
            historyId,
            watchedAt: new Date(),
-         },{session})
-
-        console.log("dupleecate envet ", isDuplicateEvent);
-
+         }],{session})
        }
-        console.log(" done  gratete  sdfa");
         
        
      } catch (error) {
