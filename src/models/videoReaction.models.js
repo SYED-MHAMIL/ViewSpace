@@ -17,7 +17,6 @@ const reaction  =  Schema({
         default: true
     }
 
-
 })
 
 export const Reaction = model("VideoReaction",reaction)

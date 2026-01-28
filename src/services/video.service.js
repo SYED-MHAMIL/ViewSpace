@@ -1,7 +1,7 @@
 import { DateTime } from "luxon";
 // import { User } from "../models/user.model.js";
-import { getHistory } from "./watchHistory.service.js"
-import { watchEvent } from "./watchEvent.service.js"
+import { getHistory } from "./watchHistory.service.js";
+import { watchEvent } from "./watchEvent.service.js";
 import { Video } from "../models/video.model.js";
 import { ApiError } from "../utils/ApiEror.js";
 
@@ -9,21 +9,23 @@ import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import mongoose from "mongoose";
 import { User } from "../models/user.model.js";
 
-
 // video service handler
-const getAndRegisterView =async (videoId,userId,session) => {
-  const video = await Video.findByIdAndUpdate(
-    videoId,
+const getAndRegisterView = async (videoId, userId, session) => {
+  console.log("videoID", videoId);
+  
+  const video = await Video.findOneAndUpdate(
+    {_id:videoId},
     { $addToSet: { views: userId } },
     { new: true },
-    { upsert: true }
   ).session(session);
   // if vidoeo doenot exits
+  console.log("video is" , video);
+  
   if (!video) {
     throw new ApiError(404, "Video not found");
   }
-  return video
-}
+  return video;
+};
 
 // add the video
 const addVideo = async (req, res) => {
@@ -125,68 +127,85 @@ const getAllVideo = async (req, res) => {
   return video;
 };
 
-
 // get user reaction oon video
-const getAllUserReaction =async (videoId) => {
-   await Video.aggregate([
-     {
-       $match :{
-          _id : videoId,
-       }
-     },
-    //  TODO Tomooeor: 
-    //  d
-    //  {
-      //  $lookup :{
-    //       from : "videoreactions",
-    //       localField: "_id",
-    //       foreignField: "videoId",
-    //       as: "likeReact",
-    //       pipeline :[
-    //         {
-    //           $exp : {$eq : ["reaction",1]}
-    //         }
-    //       ]  
-    //    }
-    //  },
-    //  {
-    //   $addFields :{
-    //      liked : {$cond : {if:'$likeReact.reaction' == 1,then:{$size: "$likeReact.reaction"}}}
-    //   }
-    //  }      
-   ])
-   
+const getAllUserReaction = async (videoId, session) => {
+  const [video] = await Video.aggregate(
+    [
+      {
+        $match: {
+          _id: videoId,
+        },
+      },
+      {
+        $lookup: {
+          from: "videoreactions",
+          localField: "_id",
+          foreignField: "videoId",
+          as: "reaction",
+        },
+      },
+      {
+        $addFields: {
+          liked: {
+            $size :{
+              $filter: {
+              input: "$reaction",
+              as: "r",
+              cond: { $eq: ["$$r.reaction", 1] },
+            }
+            },
+          },
+        },
+      },
+      {
+        $addFields: {
+          unliked: {
+            $size :{
+              $filter: {
+              input: "$reaction",
+              as: "r",
+              cond: { $eq: ["$r.reaction", -1] },
+            }
+            },
+          },
+        },
+      },
+      {
+        $project:{
+          reaction : 0
+        }
+      }
 
-
-} 
-
-
+    ],
+    { session }
+  );
+  return video;
+};
 
 const watchVideo = async (req, res) => {
-  const session  =await mongoose.startSession()
- 
+  const session = await mongoose.startSession();
+
   try {
-     session.startTransaction()
-     let {videoId} =req.params
-     videoId =  new mongoose.Types.ObjectId(videoId)
-     const {_id} =req.user
-  
-      const video = await getAndRegisterView(videoId,_id,session)
-      const history = await getHistory(videoId,_id,session)
-      await watchEvent(history._id,session)
-      
-      await session.commitTransaction()  
-      return video
-    } catch (error) {
-    await session.abortTransaction()
-      console.error("watchVideo error:", error);  // <-- log full error
-    throw new ApiError(404," you can't watch the video ")
+    session.startTransaction();
+    let { videoId } = req.params;
+    videoId = new mongoose.Types.ObjectId(videoId);
+    const { _id } = req.user;
 
-  }finally{
-            await session.endSession()
+    let video = await getAndRegisterView(videoId,_id,session);
+    const history = await getHistory(videoId, _id, session);
+    await watchEvent(history._id, session);
+    video = await getAllUserReaction(videoId, session);
+
+    await session.commitTransaction();
+    // get alll user reaction
+    return video;
+  } catch (error) {
+    await session.abortTransaction();
+    console.error("watchVideo error:", error); // <-- log full error
+    throw new ApiError(404, " you can't watch the video ");
+  } finally {
+    await session.endSession();
   }
-  
-
 
   // TODO: will do later on
   // enforcing DB-level uniqueness
