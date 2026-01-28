@@ -164,7 +164,7 @@ const getAllUserReaction = async (videoId, session) => {
               $filter: {
               input: "$reaction",
               as: "r",
-              cond: { $eq: ["$r.reaction", -1] },
+              cond: { $eq: ["$$r.reaction", -1] },
             }
             },
           },

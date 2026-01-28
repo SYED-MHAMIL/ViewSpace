@@ -7,14 +7,20 @@ import { ApiError } from "../utils/ApiEror.js";
 const likedVideo = async (req, res) => {
   const session =await mongoose.startSession() // start session
   try {
-    const { videoId } = req.params;
-    const { _id } = req.user;
+    let { videoId } = req.params;
+    
+    videoId = new mongoose.Types.ObjectId(videoId);
     session.startTransaction()
+    const video =  await Video.findOne({_id:videoId},null,{session});
+    const _id = req.user
+    if (!video) {
+        throw new ApiError(404,"Video does not exits")
+    }
     const reaction = await Reaction.findOne({ videoId, likedby: _id },null,{session});
-
+   
   // if there is no reaction 
   if (!reaction) {
-    console.log("add ed the react document ");
+    console.log("added the react document ");
     
      await Reaction.create([{
       videoId,
@@ -22,7 +28,7 @@ const likedVideo = async (req, res) => {
       reaction : 1
     }],{session})
 
-    await Video.findByIdAndDelete({_id:videoId},{$inc:{liked:1}},{session} );
+    await Video.findOneAndUpdate({_id:videoId},{$inc:{liked:1}},{session} );
     await session.commitTransaction();
     return {
       liked: 1,
@@ -33,7 +39,7 @@ const likedVideo = async (req, res) => {
   if (reaction?.reaction == 1) {
 
      await Reaction.deleteOne({ videoId, likedby: _id }).session(session),
-     await  Video.findByIdAndDelete({_id:videoId},{$inc:{liked:-1}}).session(session)
+     await  Video.findOneAndUpdate({_id:videoId},{$inc:{liked:-1}}).session(session)
      await session.commitTransaction();
    
 
@@ -45,7 +51,7 @@ const likedVideo = async (req, res) => {
 
   // switch unlike to  liked
   reaction.reaction = 1;
-  await Video.findByIdAndDelete({_id:videoId},{$inc:{liked:1,unliked:-1}},{session}),
+  await Video.findOneAndUpdate({_id:videoId},{$inc:{liked:1,unliked:-1}},{session}),
   await reaction.save({session})  
   
   return {
@@ -64,32 +70,37 @@ const likedVideo = async (req, res) => {
 const unlikedVideo = async (req, res) => {
    const session =await mongoose.startSession() // start session
    try {
-     const { videoId } = req.params;
-  const { _id } = req.user;
-  const islikedVideo = await Reaction.findOne({ videoId, likedby: _id });
+     let { videoId } = req.params;
+  
+    videoId = new mongoose.Types.ObjectId(videoId);
     session.startTransaction()
+    const video =  await Video.findOne({_id:videoId},null,{session});
+    const _id = req.user;
+    if (!video) {
+        throw new ApiError(404,"Video does not exits")
+    }
+  const islikedVideo = await Reaction.findOne({ videoId, likedby: _id },null,{session});
+  
   
   //  no -reaction --->  unlike
   if (!islikedVideo) {
-      session.startTransaction()
-    const likedvideo = await Reaction.create({
+  
+    const likedvideo = await Reaction.create([{
       videoId,
       likedby: _id,
-      reaction: 1,
+      reaction: -1,
       liked: 0,
-    },{session});
+    }],{session});
     
     await Video.findByIdAndUpdate(videoId,{$inc:{unliked:1}}).session(session)
     await session.commitTransaction()
     return {
-      videoId: likedvideo.videoId,
-      likedby: likedvideo.likedby,
       unliked: 1,
     };
   }
   //  toggleoff
-  if (likedVideo.reaction == -1) {
-        session.startTransaction()
+  if (islikedVideo.reaction == -1) {
+
     await Reaction.deleteOne({ videoId, likedby: _id }).session(session);
     await Video.findByIdAndUpdate(videoId,{$inc:{unliked:-1}}).session(session)
     await session.commitTransaction()
@@ -99,9 +110,9 @@ const unlikedVideo = async (req, res) => {
   }
 
   //  switch from liked to unlike
-  likedVideo.reaction = -1 
+  islikedVideo.reaction = -1 
 
-  await likedVideo.save({session});
+  await islikedVideo.save({session});
   await Video.findByIdAndUpdate(videoId,{$inc:{unliked:1,liked:-1}}).session(session)
 
   await session.commitTransaction()
@@ -111,7 +122,7 @@ const unlikedVideo = async (req, res) => {
   };
    } catch (error) {
        await session.abortTransaction()
-       throw new ApiError(404,"unliked video does not work")    
+       throw new ApiError(404,"unliked video does not work",error)    
    }
    finally{
        await session.endSession()
