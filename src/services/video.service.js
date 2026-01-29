@@ -128,7 +128,7 @@ const getAllVideo = async (req, res) => {
 };
 
 // get user reaction oon video
-const getAllUserReaction = async (videoId, session) => {
+const getAllUserReaction = async (videoId,userId,session) => {
   const [video] = await Video.aggregate(
     [
       {
@@ -155,10 +155,6 @@ const getAllUserReaction = async (videoId, session) => {
             }
             },
           },
-        },
-      },
-      {
-        $addFields: {
           unliked: {
             $size :{
               $filter: {
@@ -168,13 +164,46 @@ const getAllUserReaction = async (videoId, session) => {
             }
             },
           },
+          isLiked:{
+            $anyElementTrue:{
+              $filter:{
+              input: "$reaction",
+              as: "r",
+              cond :{
+                $and: [
+                  { $eq: ["$$r.likedby", userId] }
+                  ,{$eq: ["$$r.reaction", 1] }
+                ]
+              }  
+            
+            }
+            }
+          },
+          isUnliked:{
+            $anyElementTrue:{
+              $filter:{
+              input: "$reaction",
+              as: "r",
+              cond :{
+                $and: [
+                  { $eq: ["$$r.likedby", userId] }
+                  ,{$eq: ["$$r.reaction", -1] }
+                ]
+              }  
+            
+            }
+            }
+          },
+           viewsCount: { $size: { $ifNull: ["$views", []] } }
         },
       },
       {
         $project:{
           reaction : 0
         }
-      }
+      },
+      // for login user reawction status
+     
 
     ],
     { session }
@@ -194,7 +223,7 @@ const watchVideo = async (req, res) => {
     let video = await getAndRegisterView(videoId,_id,session);
     const history = await getHistory(videoId, _id, session);
     await watchEvent(history._id, session);
-    video = await getAllUserReaction(videoId, session);
+    video = await getAllUserReaction(videoId,_id, session);
 
     await session.commitTransaction();
     // get alll user reaction

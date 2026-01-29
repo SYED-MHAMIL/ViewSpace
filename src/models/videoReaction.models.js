@@ -1,6 +1,6 @@
 import { model, Schema } from "mongoose";
 
-const reaction  =  Schema({
+const reaction  = Schema({
      videoId: {
          type  : Schema.Types.ObjectId,
          ref: "Video",
